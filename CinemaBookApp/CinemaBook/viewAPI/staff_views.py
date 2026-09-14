@@ -196,14 +196,17 @@ def staff_verify_ticket_api(request):
     # Ràng buộc 2: Kiểm tra Suất chiếu của vé đã kết thúc hoặc chưa tới ngày chiếu hay chưa
     if ticket.booking and ticket.booking.showtime:
         st = ticket.booking.showtime
-        now_dt = timezone.localtime(timezone.now())
+        now_dt = timezone.now()
 
         if st.show_date and st.end_time:
-            showtime_end_dt = timezone.make_aware(
-                datetime.combine(st.show_date, st.end_time),
-                timezone.get_current_timezone()
-            )
-            if now_dt > showtime_end_dt:
+            end_dt_naive = datetime.combine(st.show_date, st.end_time)
+            try:
+                end_dt = timezone.make_aware(end_dt_naive, timezone.get_current_timezone())
+            except Exception:
+                end_dt = end_dt_naive
+
+            cmp_now = now_dt if timezone.is_aware(end_dt) else datetime.now()
+            if cmp_now > end_dt:
                 end_str = st.end_time.strftime('%H:%M')
                 date_str = st.show_date.strftime('%d/%m/%Y')
                 return JsonResponse({
@@ -213,7 +216,7 @@ def staff_verify_ticket_api(request):
                     'ticket_info': ticket_data
                 }, status=400)
 
-        if st.show_date and now_dt.date() < st.show_date:
+        if st.show_date and timezone.localtime(now_dt).date() < st.show_date:
             date_str = st.show_date.strftime('%d/%m/%Y')
             return JsonResponse({
                 'success': False,
@@ -229,7 +232,7 @@ def staff_verify_ticket_api(request):
             'status_type': 'ALREADY_USED',
             'message': f' VÉ NÀY ĐÃ ĐƯỢC SOÁT VÀO LÚC: {used_time}!',
             'ticket_info': ticket_data
-        })
+        }, status=400)
 
     ticket.is_used = True
     ticket.used_at = timezone.now()
