@@ -64,7 +64,7 @@ const ChatWidget = () => {
 
     return (
         <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999 }}>
-            {/* Nút bật/tắt Chatbox - Thiết kế Đỏ/Đen chuẩn rạp phim, KHÔNG CHỨA ICON */}
+            {/* Nút bật/tắt Chatbox - Thiết kế Đỏ/Đen hình vuông */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
@@ -72,7 +72,7 @@ const ChatWidget = () => {
                         backgroundColor: '#dc2626',
                         color: '#ffffff',
                         border: '2px solid #ff4d4d',
-                        borderRadius: '30px',
+                        borderRadius: '0px',
                         padding: '12px 22px',
                         fontWeight: 'bold',
                         fontSize: '0.95rem',
@@ -86,7 +86,7 @@ const ChatWidget = () => {
                 </button>
             )}
 
-            {/* Khung Hộp Chatbox - Màu chủ đạo Đỏ & Đen */}
+            {/* Khung Hộp Chatbox - Hình vuông màu Đỏ & Đen */}
             {isOpen && (
                 <div
                     style={{
@@ -96,14 +96,14 @@ const ChatWidget = () => {
                         maxHeight: '80vh',
                         backgroundColor: '#14141d',
                         border: '2px solid #dc2626',
-                        borderRadius: '16px',
+                        borderRadius: '0px',
                         boxShadow: '0 12px 32px rgba(0, 0, 0, 0.8)',
                         display: 'flex',
                         flexDirection: 'column',
                         overflow: 'hidden'
                     }}
                 >
-                    {/* Header Của Chatbox - Không chứa Icon */}
+                    {/* Header Của Chatbox */}
                     <div
                         style={{
                             backgroundColor: '#07070a',
@@ -128,7 +128,7 @@ const ChatWidget = () => {
                                 backgroundColor: '#272738',
                                 color: '#ffffff',
                                 border: 'none',
-                                borderRadius: '6px',
+                                borderRadius: '0px',
                                 padding: '4px 12px',
                                 fontSize: '0.85rem',
                                 fontWeight: 'bold',
@@ -211,7 +211,7 @@ const ChatWidget = () => {
                                 flex: 1,
                                 backgroundColor: '#14141d',
                                 border: '1px solid #3f3f5a',
-                                borderRadius: '8px',
+                                borderRadius: '0px',
                                 padding: '8px 12px',
                                 color: '#ffffff',
                                 fontSize: '0.9rem',
@@ -225,7 +225,7 @@ const ChatWidget = () => {
                                 backgroundColor: '#dc2626',
                                 color: '#ffffff',
                                 border: 'none',
-                                borderRadius: '8px',
+                                borderRadius: '0px',
                                 padding: '8px 16px',
                                 fontWeight: 'bold',
                                 fontSize: '0.9rem',
