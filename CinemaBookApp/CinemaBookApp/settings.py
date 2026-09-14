@@ -90,7 +90,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'CinemaBookApp.wsgi.application'
 
 db_engine = os.getenv('DB_ENGINE', '').strip()
-if not db_engine or 'sqlite' in db_engine.lower():
+db_host = os.getenv('DB_HOST', 'localhost').strip()
+
+# Cấu hình Database thông minh: Trên Render Cloud luôn tự động dùng SQLite nếu không có Server MySQL riêng
+if not db_engine or 'sqlite' in db_engine.lower() or os.getenv('RENDER'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -104,7 +107,7 @@ else:
             'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
             'USER': os.getenv('DB_USER', os.getenv('GET_USER_MySQL', '')),
             'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('GET_PASS_MySQL', '')),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'HOST': db_host,
             'PORT': os.getenv('DB_PORT', '3306'),
         }
     }
