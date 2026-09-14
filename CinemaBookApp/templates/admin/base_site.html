@@ -34,7 +34,7 @@
         </a>
         {% endif %}
 
-        {% if user.is_authenticated and user.is_staff %}
+        {% if user.is_authenticated and not user.is_superuser and user.profile.role != 'ROLE_ADMIN' %}
         <a href="/admin/staff/check-ticket/" class="nav-camera-btn" style="background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #ffffff; padding: 7px 16px; border-radius: 20px; font-weight: 700; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.45); white-space: nowrap; transition: all 0.2s ease;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>

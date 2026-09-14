@@ -12,17 +12,23 @@ from ..models import Ticket, UserRole, Cinema, UserProfile
 
 
 def is_staff_member(user):
-    """Kiểm tra người dùng có đúng là Nhân viên rạp (ROLE_STAFF) hoặc Staff/Superuser hay không"""
+    """Kiểm tra người dùng có đúng là Nhân viên rạp (ROLE_STAFF) hay không (Admin không được soát vé)"""
     if not user or not user.is_authenticated:
         return False
-    if user.is_superuser or user.is_staff:
-        return True
-    return bool(hasattr(user, 'profile') and user.profile.role == UserRole.STAFF)
+    # Admin/Superuser không được phép soát vé
+    if user.is_superuser or (hasattr(user, 'profile') and user.profile.role == UserRole.ADMIN):
+        return False
+    return bool(hasattr(user, 'profile') and user.profile.role == UserRole.STAFF) or (user.is_staff and not user.is_superuser)
 
 
 @staff_member_required
 def staff_check_ticket_view(request):
-    """Giao diện Soát vé Camera dành cho Staff & Admin"""
+    """Giao diện Soát vé Camera dành riêng cho Nhân viên rạp (ROLE_STAFF)"""
+    user = request.user
+    if user.is_superuser or (hasattr(user, 'profile') and user.profile.role == UserRole.ADMIN):
+        return render(request, 'admin/check_ticket_scanner.html', {
+            'error_message': '⛔ QUYỀN TRUY CẬP BỊ TỪ CHỐI! Quản trị viên hệ thống (Admin) không được phép thực hiện soát vé. Chức năng này chỉ dành cho Nhân viên rạp (ROLE_STAFF).'
+        })
     return render(request, 'admin/check_ticket_scanner.html')
 
 
