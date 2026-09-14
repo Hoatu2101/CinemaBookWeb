@@ -26,10 +26,22 @@ class CinemaSerializer(serializers.ModelSerializer):
 
 class MovieSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
+    poster = serializers.SerializerMethodField()
 
     class Meta:
         model = Movie
         fields = '__all__'
+
+    def get_poster(self, obj):
+        if not obj.poster:
+            return "https://res.cloudinary.com/dxxwcby8l/image/upload/v1717013892/Cinemax-Placeholder-Gold-Star_d3k4e0.jpg"
+        url = str(obj.poster.url) if hasattr(obj.poster, 'url') else str(obj.poster)
+        if url.startswith('http://') or url.startswith('https://'):
+            return url
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 #api profile
@@ -37,10 +49,22 @@ class ProfileSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     user_email = serializers.CharField(source='user.email', read_only=True)
     user_first_name = serializers.CharField(source='user.first_name', read_only=True)
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = '__all__'
+
+    def get_avatar(self, obj):
+        if not obj.avatar:
+            return None
+        url = str(obj.avatar.url) if hasattr(obj.avatar, 'url') else str(obj.avatar)
+        if url.startswith('http://') or url.startswith('https://'):
+            return url
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 #Seriliazer seat 

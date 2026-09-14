@@ -89,16 +89,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'CinemaBookApp.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'USER': os.getenv('DB_USER', os.getenv('GET_USER_MySQL', '')),
-        'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('GET_PASS_MySQL', '')),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '3306'),
+db_engine = os.getenv('DB_ENGINE', '').strip()
+if not db_engine or 'sqlite' in db_engine.lower():
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': db_engine,
+            'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+            'USER': os.getenv('DB_USER', os.getenv('GET_USER_MySQL', '')),
+            'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('GET_PASS_MySQL', '')),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '3306'),
+        }
+    }
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
