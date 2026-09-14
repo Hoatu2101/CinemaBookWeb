@@ -1,8 +1,14 @@
 import os
 from django.conf import settings
-from google import genai
+
+try:
+    from google import genai
+except ImportError:
+    genai = None
 
 def get_gemini_client():
+    if genai is None:
+        raise ValueError("Thư viện google-genai chưa được cài đặt!")
     api_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
     if not api_key:
         raise ValueError("Chưa tìm thấy GEMINI_API_KEY! Vui lòng cấu hình GEMINI_API_KEY trong file .env hoặc settings.py.")

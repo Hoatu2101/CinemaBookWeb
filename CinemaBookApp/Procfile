@@ -1,1 +1,1 @@
-web: gunicorn CinemaBookApp.wsgi:application --log-file -
+web: python -m gunicorn CinemaBookApp.wsgi:application --log-file -
