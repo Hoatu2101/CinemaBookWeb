@@ -1,0 +1,567 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('CineBook')
+}}{% endblock %}
+
+{% block branding %}
+<div id="site-name" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 16px; flex-wrap: nowrap;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="{% url 'admin:index' %}" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+            <div style="background: linear-gradient(135deg, #e11d48, #be123c); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.4);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="4" ry="4"></rect>
+                    <line x1="7" y1="2" x2="7" y2="22"></line>
+                    <line x1="17" y1="2" x2="17" y2="22"></line>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                </svg>
+            </div>
+            <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: -0.3px; color: #ffffff; font-family: 'Inter', sans-serif;">
+                CineBook
+            </span>
+        </a>
+        {% if user.is_authenticated and user.profile.cinema %}
+        <span style="background: rgba(192, 132, 252, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); padding: 4px 12px; border-radius: 12px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+            📍 {{ user.profile.cinema.name }}
+        </span>
+        {% endif %}
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+        {% if user.is_superuser or user.profile.role == 'ROLE_ADMIN' or user.profile.role == 'ROLE_CINEMA_MANAGER' %}
+        <a href="/admin/staff/register/" style="background: linear-gradient(135deg, #e50914, #b20710); color: #ffffff; padding: 7px 16px; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; box-shadow: 0 4px 14px rgba(229, 9, 20, 0.4); white-space: nowrap; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px;">
+            <span>+ Tạo Nhân Viên</span>
+        </a>
+        {% endif %}
+
+        {% if user.is_authenticated and user.is_staff %}
+        <a href="/admin/staff/check-ticket/" class="nav-camera-btn" style="background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #ffffff; padding: 7px 16px; border-radius: 20px; font-weight: 700; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.45); white-space: nowrap; transition: all 0.2s ease;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span>Soát Vé Camera</span>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block nav-global %}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'admin/css/base_site.css' %}">
+<style>
+    .inline-group table.tabular td.original,
+    .inline-group table.tabular th.original,
+    td.original,
+    th.original {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+    }
+
+    .inline-group table.tabular td.original *,
+    td.original * {
+        display: none !important;
+    }
+
+    /* Gemini AI Chat Drawer Styling */
+
+
+
+    .gemini-chat-toggle-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 99999;
+        background: #dc2626;
+        color: #ffffff;
+        border: 2px solid #ff4d4d;
+        border-radius: 50px;
+        padding: 12px 22px;
+        font-weight: 800;
+        font-size: 0.88rem;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .gemini-chat-toggle-btn:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 12px 32px rgba(220, 38, 38, 0.6);
+        background: #b91c1c;
+    }
+
+    .gemini-chat-panel {
+        position: fixed;
+        bottom: 84px;
+        right: 24px;
+        z-index: 99999;
+        width: 380px;
+        height: 520px;
+        background: rgba(24, 24, 27, 0.96);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        animation: popup-fade 0.25s ease-out;
+    }
+
+    @keyframes popup-fade {
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.96);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .gemini-chat-header {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .gemini-chat-title {
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .gemini-chat-close-btn {
+        background: transparent;
+        border: none;
+        color: #a1a1aa;
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+        padding: 4px;
+    }
+
+    .gemini-chat-close-btn:hover {
+        color: #fff;
+    }
+
+    .gemini-chat-messages {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .chat-msg {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    .chat-msg.ai {
+        align-self: flex-start;
+        background: #18181b;
+        border: 1px solid #27272a;
+        color: #e4e4e7;
+    }
+
+    .chat-msg.user {
+        align-self: flex-end;
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        color: #ffffff;
+    }
+
+    .gemini-quick-pills {
+        display: flex;
+        gap: 6px;
+        padding: 0 16px 10px 16px;
+        overflow-x: auto;
+    }
+
+    .quick-pill-btn {
+        background: #18181b;
+        border: 1px solid #27272a;
+        color: #a1a1aa;
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .quick-pill-btn:hover {
+        border-color: #8b5cf6;
+        color: #ffffff;
+    }
+
+    .gemini-chat-input-row {
+        padding: 12px 16px;
+        border-top: 1px solid #27272a;
+        display: flex;
+        gap: 8px;
+        background: #121215;
+    }
+
+    .gemini-chat-input-row input {
+        flex: 1;
+        background: #18181b !important;
+        border: 1px solid #27272a !important;
+        border-radius: 10px !important;
+        padding: 8px 12px !important;
+        color: #fff !important;
+        font-size: 0.85rem !important;
+    }
+
+    .gemini-chat-send-btn {
+        background: #8b5cf6;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Sidebar Toggle
+        const toggleButton = document.getElementById('toggle-nav-sidebar');
+        const body = document.body;
+        if (toggleButton) {
+            const storageKey = 'cinemabook_admin_sidebar_collapsed';
+            const savedState = localStorage.getItem(storageKey) === '1';
+            const setSidebarState = function (collapsed) {
+                body.classList.toggle('sidebar-collapsed', collapsed);
+                toggleButton.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+                const label = toggleButton.querySelector('.toggle-label');
+                if (label) {
+                    label.textContent = collapsed ? 'Hiện menu' : 'Ẩn menu';
+                }
+                localStorage.setItem(storageKey, collapsed ? '1' : '0');
+            };
+
+            setSidebarState(savedState);
+            toggleButton.addEventListener('click', function () {
+                setSidebarState(!body.classList.contains('sidebar-collapsed'));
+            });
+        }
+
+        // 2. Gemini AI Chat Widget Logic
+        const chatToggleBtn = document.getElementById('gemini-chat-toggle-btn');
+        const chatPanel = document.getElementById('gemini-chat-panel');
+        const chatCloseBtn = document.getElementById('gemini-chat-close-btn');
+        const chatMessages = document.getElementById('gemini-chat-messages');
+        const chatInput = document.getElementById('gemini-chat-input');
+        const chatSendBtn = document.getElementById('gemini-chat-send-btn');
+
+        if (chatToggleBtn && chatPanel) {
+            chatToggleBtn.addEventListener('click', function () {
+                const isOpen = chatPanel.style.display === 'flex';
+                chatPanel.style.display = isOpen ? 'none' : 'flex';
+            });
+
+            if (chatCloseBtn) {
+                chatCloseBtn.addEventListener('click', function () {
+                    chatPanel.style.display = 'none';
+                });
+            }
+
+            function sendChatMessage(text) {
+                if (!text || !text.trim()) return;
+
+                // User message
+                const userDiv = document.createElement('div');
+                userDiv.className = 'chat-msg user';
+                userDiv.textContent = text;
+                chatMessages.appendChild(userDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Loading AI message
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'chat-msg ai';
+                aiDiv.textContent = 'AI đang suy nghĩ...';
+                chatMessages.appendChild(aiDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+                const csrfToken = csrfInput ? csrfInput.value : '';
+
+                const formData = new FormData();
+                formData.append('prompt', text);
+                if (csrfToken) formData.append('csrfmiddlewaretoken', csrfToken);
+
+                fetch("{% url 'gemini_chat' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            aiDiv.textContent = data.reply;
+                        } else {
+                            aiDiv.textContent = 'Lỗi: ' + (data.message || 'Không thể lấy phản hồi.');
+                        }
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    })
+                    .catch(err => {
+                        aiDiv.textContent = 'Lỗi kết nối server: ' + err;
+                    });
+            }
+
+            if (chatSendBtn && chatInput) {
+                chatSendBtn.addEventListener('click', function () {
+                    const text = chatInput.value;
+                    chatInput.value = '';
+                    sendChatMessage(text);
+                });
+
+                chatInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const text = chatInput.value;
+                        chatInput.value = '';
+                        sendChatMessage(text);
+                    }
+                });
+            }
+
+            // Quick Pill buttons
+            document.querySelectorAll('.quick-pill-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    sendChatMessage(this.getAttribute('data-prompt'));
+                });
+            });
+        }
+    });
+</script>
+
+<script>
+    /* Tự động ẩn/hiện trường Rạp phụ trách (cinema) - Hiển thị khi chọn Quản lý Rạp (ROLE_CINEMA_MANAGER) HOẶC Nhân viên (ROLE_STAFF) */
+    document.addEventListener('DOMContentLoaded', function () {
+        function updateCinemaVisibility() {
+            const roleSelects = document.querySelectorAll('select[name*="role"], select[id*="role"]');
+            roleSelects.forEach(function (roleSelect) {
+                // Định vị chính xác container bao bọc khối inline này
+                const container = roleSelect.closest('.inline-related, fieldset, form, #user_form') || document;
+                const val = roleSelect.value || '';
+                const isManagerOrStaff = (val === 'ROLE_CINEMA_MANAGER' || val === 'ROLE_STAFF' || val.includes('CINEMA_MANAGER') || val.includes('STAFF'));
+
+                // Tìm trường cinema bên trong CÙNG CONTAINER
+                const cinemaRows = container.querySelectorAll('.field-cinema, div.form-row.field-cinema, .fieldBox.field-cinema');
+                cinemaRows.forEach(function (row) {
+                    if (isManagerOrStaff) {
+                        row.style.setProperty('display', 'block', 'important');
+                    } else {
+                        row.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            });
+        }
+
+        updateCinemaVisibility();
+        setTimeout(updateCinemaVisibility, 50);
+        setTimeout(updateCinemaVisibility, 200);
+        setTimeout(updateCinemaVisibility, 500);
+
+        document.addEventListener('change', function (e) {
+        });
+    });
+</script>
+
+<script>
+    /* Thiết kế lại Thanh Lọc Django Admin (#changelist-filter) của TẤT CẢ các model thành Thanh Ngang Dropdown (Xóa bỏ hoàn toàn cột đứng bên phải) */
+    document.addEventListener('DOMContentLoaded', function () {
+        const toolbar = document.getElementById('toolbar');
+        const filterContainer = document.getElementById('changelist-filter');
+        const changelistForm = document.getElementById('changelist-form');
+
+        if (filterContainer) {
+            // Nếu có thanh tìm kiếm (toolbar), di chuyển khung lọc nằm dưới thanh tìm kiếm. Nếu không có, di chuyển nằm trên bảng dữ liệu.
+            if (toolbar && filterContainer.parentNode) {
+                toolbar.parentNode.insertBefore(filterContainer, toolbar.nextSibling);
+            } else if (changelistForm && filterContainer.parentNode) {
+                changelistForm.parentNode.insertBefore(filterContainer, changelistForm);
+            }
+
+            transformAdminFilters();
+        }
+
+        function transformAdminFilters() {
+            const filterGroups = [];
+
+            // 1. Thu thập dữ liệu từ <details> (Django 4+)
+            const detailsList = Array.from(filterContainer.querySelectorAll('details'));
+            if (detailsList.length > 0) {
+                detailsList.forEach(details => {
+                    const summary = details.querySelector('summary');
+                    const ul = details.querySelector('ul');
+                    if (summary && ul) {
+                        const titleText = summary.textContent.replace(/⚡|Filter|Lọc theo/gi, '').trim();
+                        filterGroups.push({ title: titleText, ul: ul });
+                    }
+                });
+            } else {
+                // 2. Thu thập từ <h3> và <ul> (Django Standard)
+                const h3List = Array.from(filterContainer.querySelectorAll('h3'));
+                h3List.forEach(h3 => {
+                    let nextEl = h3.nextElementSibling;
+                    if (nextEl && nextEl.tagName === 'UL') {
+                        const titleText = h3.textContent.trim();
+                        filterGroups.push({ title: titleText, ul: nextEl });
+                    }
+                });
+            }
+
+            if (filterGroups.length === 0) return;
+
+            // Xóa sạch khung cột đứng cũ
+            filterContainer.innerHTML = '';
+
+            // Tạo Header tiêu đề thanh lọc ngang
+            const header = document.createElement('div');
+            header.className = 'admin-filter-bar-header';
+            header.innerHTML = `<span class="filter-bar-title">BỘ LỌC DỮ LIỆU</span>`;
+
+            // Hàng chứa các ô lọc Dropdown nằm ngang
+            const pillsContainer = document.createElement('div');
+            pillsContainer.className = 'admin-filter-pills-row';
+
+            let hasActiveFilter = false;
+
+            filterGroups.forEach((fg) => {
+                const pillGroup = document.createElement('div');
+                pillGroup.className = 'admin-filter-pill-group';
+
+                const label = document.createElement('span');
+                label.className = 'admin-filter-pill-label';
+                label.textContent = `${fg.title}:`;
+
+                const select = document.createElement('select');
+                select.className = 'admin-filter-select-pill';
+
+                const lis = fg.ul.querySelectorAll('li');
+                lis.forEach(li => {
+                    const a = li.querySelector('a');
+                    if (a) {
+                        const option = document.createElement('option');
+                        option.value = a.getAttribute('href');
+                        option.textContent = a.textContent.trim();
+                        if (li.classList.contains('selected')) {
+                            option.selected = true;
+                            const optText = a.textContent.toLowerCase();
+                            if (!optText.includes('tất cả') && !optText.includes('all') && !optText.includes('any date')) {
+                                pillGroup.classList.add('is-active-filter');
+                                hasActiveFilter = true;
+                            }
+                        }
+                        select.appendChild(option);
+                    }
+                });
+
+                select.addEventListener('change', function () {
+                    if (this.value) {
+                        window.location.href = this.value;
+                    }
+                });
+
+                pillGroup.appendChild(label);
+                pillGroup.appendChild(select);
+                pillsContainer.appendChild(pillGroup);
+            });
+
+            // Nút "Xóa bộ lọc" nếu đang lọc hoặc tìm kiếm
+            const urlParams = new URLSearchParams(window.location.search);
+            if (hasActiveFilter || urlParams.toString().length > 0) {
+                const clearBtn = document.createElement('a');
+                clearBtn.className = 'admin-filter-clear-btn';
+                clearBtn.href = window.location.pathname;
+                clearBtn.innerHTML = `✕ Xóa bộ lọc`;
+                pillsContainer.appendChild(clearBtn);
+            }
+
+            filterContainer.appendChild(header);
+            filterContainer.appendChild(pillsContainer);
+        }
+    });
+</script>
+
+
+
+
+
+
+
+
+
+
+{% if user.is_authenticated and user.is_staff %}
+<!-- Floating Gemini AI Chat Button & Panel -->
+<button type="button" id="gemini-chat-toggle-btn" class="gemini-chat-toggle-btn">
+    TRỢ LÝ AI CINEBOOK ADMIN
+</button>
+
+<div id="gemini-chat-panel" class="gemini-chat-panel">
+    <div class="gemini-chat-header" style="background: #07070a; border-bottom: 1px solid #dc2626;">
+        <div class="gemini-chat-title" style="color: #ff4d4d;">
+            TRỢ LÝ AI CINEBOOK ADMIN
+        </div>
+        <button type="button" id="gemini-chat-close-btn" class="gemini-chat-close-btn" style="background: #272738; color: #fff; border: none; border-radius: 4px; padding: 2px 10px; font-size: 0.85rem;">Đóng</button>
+    </div>
+
+    <div class="gemini-chat-messages" id="gemini-chat-messages">
+        <div class="chat-msg ai">
+            Xin chào! Tôi là Trợ Lý AI của hệ thống CinemaBook Admin. Bạn cần tôi hỗ trợ gì về quản lý rạp, lịch chiếu, doanh thu hay dịch vụ hệ thống rạp phim hôm nay?
+        </div>
+    </div>
+
+    <div class="gemini-quick-pills">
+        <button type="button" class="quick-pill-btn" data-prompt="Gợi ý 3 chiến lược tăng doanh thu rạp chiếu phim">Tăng doanh thu rạp</button>
+        <button type="button" class="quick-pill-btn" data-prompt="Cách xếp lịch chiếu rạp vào giờ vàng hiệu quả nhất">Xếp lịch giờ vàng</button>
+        <button type="button" class="quick-pill-btn" data-prompt="Viết kịch bản bài viết truyền thông quảng cáo phim mới">Bài viết truyền thông</button>
+    </div>
+
+    <div class="gemini-chat-input-row">
+        <input type="text" id="gemini-chat-input" placeholder="Hỏi AI thông tin hệ thống rạp...">
+        <button type="button" id="gemini-chat-send-btn" class="gemini-chat-send-btn" style="background: #dc2626;">Gửi</button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

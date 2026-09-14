@@ -1,0 +1,709 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Thống kê doanh thu | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Trang chủ Admin</a> &rsaquo; <span>Thống kê doanh thu</span>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stats-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stats-title h1 {
+        font-size: 1.8rem !important;
+        font-weight: 800 !important;
+        color: #ffffff !important;
+        margin: 0 0 6px 0 !important;
+    }
+
+    .stats-title p {
+        color: #a1a1aa !important;
+        margin: 0;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 28px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .period-tabs {
+        display: flex;
+        gap: 8px;
+        background: #09090b;
+        padding: 4px;
+        border-radius: 12px;
+        border: 1px solid #27272a;
+    }
+
+    .period-tab {
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: #a1a1aa !important;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        text-decoration: none !important;
+    }
+
+    .period-tab:hover {
+        color: #ffffff !important;
+    }
+
+    .period-tab.active {
+        background: #e11d48 !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-group label {
+        color: #a1a1aa;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* Summary Stat Cards */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .summary-card {
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .summary-card .label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #a1a1aa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .summary-card .value {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #ffffff;
+    }
+
+    .summary-card .value.highlight {
+        color: #e11d48;
+    }
+
+    /* Chart Container */
+    .chart-container {
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .chart-container h2 {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        margin: 0 0 20px 0 !important;
+        background: transparent !important;
+        border-bottom: none !important;
+        padding: 0 !important;
+    }
+
+    /* Data Table */
+    .table-container {
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .table-container h2 {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        background: #121215 !important;
+        padding: 16px 24px !important;
+        margin: 0 !important;
+        border-bottom: 1px solid #27272a !important;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .data-table th {
+        background: #121215;
+        color: #a1a1aa;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 14px 24px;
+        text-align: left;
+        border-bottom: 1px solid #27272a;
+    }
+
+    .data-table td {
+        padding: 14px 24px;
+        color: #ffffff;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #27272a;
+    }
+
+    .data-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+        background: #27272a;
+    }
+
+    .revenue-amount {
+        font-weight: 700;
+        color: #4ade80;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="stats-header">
+        <div class="stats-title">
+            <h1>
+                📊 Thống kê doanh thu CinemaBook
+                {% if user_cinema %}
+                <span
+                    style="background: rgba(192, 132, 252, 0.18); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); padding: 4px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; vertical-align: middle;">
+                    📍 {{ user_cinema.name }}
+                </span>
+                {% endif %}
+            </h1>
+            <p>
+                {% if user_cinema %}
+                Báo cáo doanh thu chi tiết thuộc chi nhánh rạp <strong>{{ user_cinema.name }}</strong> ({{
+                user_cinema.location }}).
+                {% else %}
+                Báo cáo tổng hợp doanh thu toàn hệ thống cụm rạp CinemaBook.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <form method="get" action="" id="filter-form">
+        <div class="filter-bar">
+            <!-- Period Tabs -->
+            <div class="period-tabs">
+                <a href="?period=day&year={{ selected_year }}&month={{ selected_month }}&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
+                    class="period-tab {% if period == 'day' %}active{% endif %}">Theo Ngày</a>
+                <a href="?period=month&year={{ selected_year }}&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
+                    class="period-tab {% if period == 'month' %}active{% endif %}">Theo Tháng</a>
+                <a href="?period=quarter&year={{ selected_year }}&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
+                    class="period-tab {% if period == 'quarter' %}active{% endif %}">Theo Quý</a>
+                <a href="?period=year&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
+                    class="period-tab {% if period == 'year' %}active{% endif %}">Theo Năm</a>
+            </div>
+
+            <input type="hidden" name="period" value="{{ period }}">
+
+            <!-- Cinema Filter Dropdown (Chỉ dành cho Superadmin hoặc cố định cho Admin Nhánh) -->
+            <div class="filter-group">
+                <label for="cinema_id">Cụm Rạp:</label>
+                {% if not is_super_admin and user_cinema %}
+                <span
+                    style="background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">
+                    📍 {{ user_cinema.name }} (Rạp phụ trách)
+                </span>
+                {% else %}
+                <select name="cinema_id" id="cinema_id" onchange="document.getElementById('filter-form').submit();">
+                    <option value="">-- Tất cả cụm rạp --</option>
+                    {% for cinema in all_cinemas %}
+                    <option value="{{ cinema.id }}" {% if cinema.id == selected_cinema_id %}selected{% endif %}>{{ cinema.name }}{% if cinema.location %} ({{ cinema.location }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+
+            <!-- Year Dropdown -->
+            {% if period != 'year' %}
+            <div class="filter-group">
+                <label for="year">Năm:</label>
+                <select name="year" id="year" onchange="document.getElementById('filter-form').submit();">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Month Dropdown (For Day Period) -->
+            {% if period == 'day' %}
+            <div class="filter-group">
+                <label for="month">Tháng:</label>
+                <select name="month" id="month" onchange="document.getElementById('filter-form').submit();">
+                    {% for m in available_months %}
+                    <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>Tháng {{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Movie Filter Dropdown -->
+            <div class="filter-group">
+                <label for="movie_id">Phim:</label>
+                <select name="movie_id" id="movie_id" onchange="document.getElementById('filter-form').submit();">
+                    <option value="">-- Tất cả phim --</option>
+                    {% for movie in movies %}
+                    <option value="{{ movie.id }}" {% if movie.id == selected_movie_id %}selected{% endif %}>{{
+                        movie.movie_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <!-- Key Summary Metric Cards -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="label">Hôm nay</div>
+            <div class="value highlight">{{ today_revenue|floatformat:0 }} VNĐ</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Tháng này</div>
+            <div class="value">{{ this_month_revenue|floatformat:0 }} VNĐ</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Quý này</div>
+            <div class="value">{{ this_quarter_revenue|floatformat:0 }} VNĐ</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Năm nay</div>
+            <div class="value">{{ this_year_revenue|floatformat:0 }} VNĐ</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Tổng tất cả</div>
+            <div class="value">{{ overall_revenue|floatformat:0 }} VNĐ</div>
+        </div>
+    </div>
+
+
+    <!-- Chart.js Graph (Biểu Đồ Đường Line Chart & Cột Bar Chart) -->
+    <div class="chart-container">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <h2 style="margin: 0;">
+                📈 Biểu đồ Doanh thu Đường (Line Chart) & Cột (Bar Chart)
+                {% if period == 'day' %}(Theo ngày trong Tháng {{ selected_month }}/{{ selected_year }})
+                {% elif period == 'month' %}(Theo tháng năm {{ selected_year }})
+                {% elif period == 'quarter' %}(Theo quý năm {{ selected_year }})
+                {% else %}(Theo năm){% endif %}
+            </h2>
+
+            <!-- Toggle Switcher giữa Biểu đồ Đường (Line) và Cột (Bar) -->
+            <div
+                style="display: inline-flex; background: #27272a; border-radius: 10px; padding: 4px; border: 1px solid #3f3f46;">
+                <button type="button" id="btn-chart-line"
+                    style="background: #e11d48; color: #ffffff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">
+                    📈 Biểu Đồ Đường (Line)
+                </button>
+                <button type="button" id="btn-chart-bar"
+                    style="background: transparent; color: #a1a1aa; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">
+                    📊 Biểu Đồ Cột (Bar)
+                </button>
+            </div>
+        </div>
+
+        <div style="position: relative; height: 340px; width: 100%;">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Biểu Đồ Cột: Top 5 Bộ Phim Có Doanh Thu Cao Nhất -->
+    <div class="chart-container" style="margin-top: 28px;">
+        <h2 style="margin-bottom: 16px;">
+            Top 5 Bộ Phim Có Doanh Thu Cao Nhất (Biểu Đồ Cột)
+        </h2>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="topMoviesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Detailed Data Table -->
+    <div class="table-container">
+        <h2>Bảng chi tiết doanh thu</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Số đơn đặt vé</th>
+                    <th style="text-align: right;">Doanh thu (VNĐ)</th>
+                    <th style="text-align: center;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in table_rows %}
+                <tr>
+                    <td><strong>{{ row.label }}</strong></td>
+                    <td>{{ row.count }} đơn</td>
+                    <td style="text-align: right;" class="revenue-amount">{{ row.revenue|floatformat:0 }} VNĐ</td>
+                    <td style="text-align: center;">
+                        <a href="/admin/CinemaBook/booking/" style="background: linear-gradient(135deg, #e11d48, #be123c); color: #ffffff; padding: 5px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);">
+                            Xem chi tiết đơn vé
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #a1a1aa; padding: 24px;">Chưa có dữ liệu doanh thu
+                        trong khoảng thời gian này.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- AI Gemini Revenue Evaluation Card (Phân Tích Doanh Thu) -->
+    <div class="ai-revenue-card"
+        style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(236, 72, 153, 0.08)); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 16px; padding: 24px; margin-top: 28px; margin-bottom: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+        {% csrf_token %}
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div
+                    style="background: linear-gradient(135deg, #8b5cf6, #ec4899); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 1.1rem;">
+                    ✨
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">AI Gemini Đánh Giá Doanh
+                        Thu</h3>
+                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #a1a1aa;">Báo cáo phân tích chuyên sâu &
+                        khuyến nghị chiến lược kinh doanh</p>
+                </div>
+            </div>
+            <button type="button" id="btn-ai-analyze-revenue"
+                style="background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4); transition: transform 0.2s;">
+                ⚡ Phân Tích Doanh Thu Ngay
+            </button>
+        </div>
+
+        <div id="ai-analysis-result-container"
+            style="color: #e4e4e7; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap;">
+            <div style="color: #71717a; text-align: center; padding: 20px;">
+                Nhấn nút <b>"⚡ Phân Tích Doanh Thu Ngay"</b> ở trên để Gemini AI tổng hợp và phân tích báo cáo doanh thu
+                hiện tại cho bạn.
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Chart.js CDN Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById('revenueChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const labels = {{ chart_labels|safe }};
+            const dataValues = {{ chart_data|safe }};
+
+            // Tạo gradient màu chìm tuyệt đẹp cho Line Chart
+            const gradientLine = ctx.createLinearGradient(0, 0, 0, 320);
+            gradientLine.addColorStop(0, 'rgba(225, 29, 72, 0.45)');
+            gradientLine.addColorStop(1, 'rgba(225, 29, 72, 0.01)');
+
+            let currentChartType = 'line';
+            let revenueChart = null;
+
+            function renderChart(type) {
+                if (revenueChart) {
+                    revenueChart.destroy();
+                }
+
+                const isLine = type === 'line';
+
+                revenueChart = new Chart(ctx, {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Doanh thu (VNĐ)',
+                            data: dataValues,
+                            backgroundColor: isLine ? gradientLine : 'rgba(225, 29, 72, 0.75)',
+                            borderColor: '#e11d48',
+                            borderWidth: 3,
+                            maxBarThickness: 45,
+                            categoryPercentage: 0.5,
+                            barPercentage: 0.5,
+                            tension: 0.4,
+                            fill: isLine,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#e11d48',
+                            pointBorderWidth: 2,
+                            pointRadius: isLine ? 5 : 0,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: '#e11d48',
+                            pointHoverBorderColor: '#ffffff',
+                            borderRadius: isLine ? 0 : 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#18181b',
+                                titleColor: '#ffffff',
+                                bodyColor: '#fb7185',
+                                borderColor: '#3f3f46',
+                                borderWidth: 1,
+                                padding: 12,
+                                boxPadding: 6,
+                                usePointStyle: true,
+                                callbacks: {
+                                    label: function (context) {
+                                        let val = context.raw || 0;
+                                        return ' Doanh thu: ' + val.toLocaleString('vi-VN') + ' VNĐ';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: {
+                                    color: '#a1a1aa',
+                                    font: { family: 'Inter, system-ui, sans-serif', weight: '600' }
+                                }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                                ticks: {
+                                    color: '#a1a1aa',
+                                    font: { family: 'Inter, system-ui, sans-serif', weight: '600' },
+                                    callback: function (value) {
+                                        if (value >= 1000000) {
+                                            return (value / 1000000).toFixed(1) + ' Tr đ';
+                                        } else if (value >= 1000) {
+                                            return (value / 1000).toFixed(0) + ' K đ';
+                                        }
+                                        return value.toLocaleString('vi-VN') + ' đ';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderChart(currentChartType);
+
+            const btnLine = document.getElementById('btn-chart-line');
+            const btnBar = document.getElementById('btn-chart-bar');
+
+            if (btnLine && btnBar) {
+                btnLine.addEventListener('click', function () {
+                    if (currentChartType === 'line') return;
+                    currentChartType = 'line';
+                    btnLine.style.background = '#e11d48';
+                    btnLine.style.color = '#ffffff';
+                    btnBar.style.background = 'transparent';
+                    btnBar.style.color = '#a1a1aa';
+                    renderChart('line');
+                });
+
+                btnBar.addEventListener('click', function () {
+                    if (currentChartType === 'bar') return;
+                    currentChartType = 'bar';
+                    btnBar.style.background = '#e11d48';
+                    btnBar.style.color = '#ffffff';
+                    btnLine.style.background = 'transparent';
+                    btnLine.style.color = '#a1a1aa';
+                    renderChart('bar');
+                });
+            }
+        }
+
+        // Biểu đồ Cột Top 5 Phim Doanh Thu Cao Nhất
+        const topCanvas = document.getElementById('topMoviesChart');
+        if (topCanvas) {
+            const topCtx = topCanvas.getContext('2d');
+            const topLabels = {{ top_movie_labels|safe }};
+            const topData = {{ top_movie_data|safe }};
+
+            const barColors = [
+                'rgba(245, 158, 11, 0.85)',
+                'rgba(59, 130, 246, 0.85)',
+                'rgba(16, 185, 129, 0.85)',
+                'rgba(139, 92, 246, 0.85)',
+                'rgba(236, 72, 153, 0.85)'
+            ];
+
+            const borderColors = [
+                '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'
+            ];
+
+            new Chart(topCtx, {
+                type: 'bar',
+                data: {
+                    labels: topLabels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: topData,
+                        backgroundColor: barColors.slice(0, topLabels.length),
+                        borderColor: borderColors.slice(0, topLabels.length),
+                        borderWidth: 2,
+                        maxBarThickness: 32,
+                        categoryPercentage: 0.6,
+                        barPercentage: 0.6,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#18181b',
+                            titleColor: '#ffffff',
+                            bodyColor: '#fb7185',
+                            borderColor: '#3f3f46',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function (context) {
+                                    let val = context.raw || 0;
+                                    return ' Doanh thu: ' + val.toLocaleString('vi-VN') + ' VNĐ';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#a1a1aa',
+                                font: { family: 'Inter, system-ui, sans-serif', weight: '600' },
+                                callback: function (value) {
+                                    if (value >= 1000000) {
+                                        return (value / 1000000).toFixed(1) + ' Tr đ';
+                                    } else if (value >= 1000) {
+                                        return (value / 1000).toFixed(0) + ' K đ';
+                                    }
+                                    return value.toLocaleString('vi-VN') + ' đ';
+                                }
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#ffffff',
+                                font: { family: 'Inter, system-ui, sans-serif', weight: '700', size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // AI Revenue Analysis Script
+        const btnAiAnalyze = document.getElementById('btn-ai-analyze-revenue');
+        const aiResultBox = document.getElementById('ai-analysis-result-container');
+
+        if (btnAiAnalyze && aiResultBox) {
+            btnAiAnalyze.addEventListener('click', function (e) {
+                e.preventDefault();
+                btnAiAnalyze.disabled = true;
+                btnAiAnalyze.textContent = '✨ Gemini AI đang phân tích dữ liệu...';
+                aiResultBox.style.opacity = '0.6';
+
+                const formData = new FormData();
+                formData.append('today', '{{ today_revenue }}');
+                formData.append('month', '{{ this_month_revenue }}');
+                formData.append('quarter', '{{ this_quarter_revenue }}');
+                formData.append('year', '{{ this_year_revenue }}');
+                formData.append('overall', '{{ overall_revenue }}');
+                formData.append('period', '{{ period }}');
+
+                const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfInput) formData.append('csrfmiddlewaretoken', csrfInput.value);
+
+                fetch("{% url 'gemini_analyze_revenue' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.text().then(html => {
+                                throw new Error(`HTTP ${res.status}: Không thể kết nối API (${html.substring(0, 80)})`);
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        btnAiAnalyze.disabled = false;
+                        btnAiAnalyze.textContent = '⚡ Phân Tích Doanh Thu Ngay';
+                        aiResultBox.style.opacity = '1';
+
+                        if (data.status === 'success' && data.analysis) {
+                            aiResultBox.textContent = data.analysis;
+                        } else {
+                            aiResultBox.textContent = 'Lỗi: ' + (data.message || 'Không thể tạo báo cáo phân tích.');
+                        }
+                    })
+                    .catch(err => {
+                        btnAiAnalyze.disabled = false;
+                        btnAiAnalyze.textContent = '⚡ Phân Tích Doanh Thu Ngay';
+                        aiResultBox.style.opacity = '1';
+                        aiResultBox.textContent = 'Lỗi kết nối Gemini AI: ' + err;
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

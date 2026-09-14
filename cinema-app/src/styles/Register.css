@@ -1,0 +1,200 @@
+/* =========================================
+   GIAO DIỆN ĐĂNG KÝ (REGISTER)
+   ========================================= */
+
+.register-container {
+    background-color: #0f0f0f; 
+    min-height: calc(100vh - 70px); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.register-box {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.register-title {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    text-align: center;
+}
+
+.register-subtitle {
+    color: #888888;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.form-row .input-group {
+    flex: 1;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    color: #dddddd;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.register-input {
+    background-color: #222222;
+    border: 1px solid #444;
+    color: #ffffff;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.register-input::placeholder {
+    color: #666;
+}
+
+.register-input:focus {
+    border-color: #ff0000;
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+}
+
+.file-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: #222222;
+    border: 1px dashed #555;
+    padding: 10px;
+    border-radius: 8px;
+    transition: border-color 0.3s;
+}
+
+.file-upload-wrapper:hover {
+    border-color: #ff0000;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+.file-upload-btn {
+    background-color: #333;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.file-upload-btn:hover {
+    background-color: #444;
+}
+
+.file-name-display {
+    color: #888;
+    font-size: 13px;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.btn-submit-register {
+    background-color: #ff0000;
+    color: #ffffff;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+}
+
+.btn-submit-register:hover {
+    background-color: #cc0000;
+    transform: translateY(-2px);
+}
+
+.register-footer {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 14px;
+    color: #888888;
+}
+
+.login-link {
+    color: #ff0000;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.login-link:hover {
+    color: #ff4500;
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
+.error-text {
+    color: #ff4d4d;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 5px;
+    display: block;
+    text-align: left;
+    text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.15);
+    animation: fadeInError 0.3s ease-in-out; 
+}
+
+.register-input.input-error {
+    border: 1.5px solid #ff4d4d !important;
+    background-color: #fff8f8;
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.2);
+    transition: all 0.2s ease;
+}
+
+@keyframes fadeInError {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

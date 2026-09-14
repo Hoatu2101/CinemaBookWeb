@@ -1,0 +1,532 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}QUÉT MÃ QR | CinemaBook Staff{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --scanner-primary: #8b5cf6;
+        --scanner-success: #10b981;
+        --scanner-error: #ef4444;
+        --scanner-warning: #f59e0b;
+        --scanner-bg: #09090b;
+        --scanner-card-bg: rgba(24, 24, 27, 0.85);
+    }
+
+    .scanner-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 15px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .scanner-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .scanner-header h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+    }
+
+    .scanner-header p {
+        color: #a1a1aa;
+        font-size: 0.95rem;
+    }
+
+    .scanner-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+        .scanner-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .scanner-card {
+        background: var(--scanner-card-bg);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 24px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .camera-wrapper {
+        position: relative;
+        width: 100%;
+        min-height: 320px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #000;
+        border: 2px dashed rgba(139, 92, 246, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #reader {
+        width: 100%;
+        border: none !important;
+    }
+
+    #reader video {
+        border-radius: 12px;
+        object-fit: cover;
+    }
+
+    .manual-input-box {
+        margin-top: 20px;
+    }
+
+    .manual-input-box label {
+        display: block;
+        color: #e4e4e7;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .input-group input {
+        flex: 1;
+        background: #18181b;
+        border: 1px solid #3f3f46;
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 600;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    .input-group input:focus {
+        border-color: var(--scanner-primary);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-submit:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .result-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .result-status-badge {
+        text-align: center;
+        padding: 16px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .status-success {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-error {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .status-warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: #18181b;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .info-item .label {
+        color: #a1a1aa;
+        font-size: 0.88rem;
+    }
+
+    .info-item .val {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .camera-control-btns {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .btn-cam {
+        flex: 1;
+        background: #27272a;
+        color: #e4e4e7;
+        border: 1px solid #3f3f46;
+        border-radius: 10px;
+        padding: 10px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cam:hover {
+        background: #3f3f46;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+</style>
+
+<div class="scanner-container">
+    <div class="scanner-header">
+        <h1>📷 HỆ THỐNG SOÁT VÉ CAMERA</h1>
+        <p>Hỗ trợ quét mã QR Code bằng Camera (Iriun Webcam / Webcam) hoặc Nhập Mã vé trực tiếp</p>
+    </div>
+
+    <div class="scanner-grid">
+        <!-- Cột trái: Quét Camera & Nhập thủ công -->
+        <div class="scanner-card">
+            <div class="camera-control-btns">
+                <button type="button" class="btn-cam" id="btn-start-cam">▶️ Bật Camera Quét</button>
+                <button type="button" class="btn-cam" id="btn-stop-cam">⏹️ Tắt Camera</button>
+            </div>
+
+            {/* Ô CHỌN CAMERA THIẾT BỊ (HỖ TRỢ IRIUN WEBCAM) */}
+            <div style="margin-bottom: 14px;">
+                <label for="camera-select" style="color: #a1a1aa; font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">
+                    📹 Chọn thiết bị Camera (Iriun Webcam / WebCam máy tính):
+                </label>
+                <select id="camera-select" style="width: 100%; background: #18181b; color: #ffffff; border: 1px solid #8b5cf6; padding: 10px 14px; border-radius: 10px; font-weight: 700; outline: none; cursor: pointer;">
+                    <option value="">Đang tìm kiếm Iriun Webcam & Camera thiết bị...</option>
+                </select>
+            </div>
+
+            <div class="camera-wrapper">
+                <div id="reader"></div>
+            </div>
+
+            <div class="manual-input-box">
+                <label for="input-ticket-code">🔑 Nhập mã vé thủ công (ví dụ: TK-A1B2C3D4):</label>
+                <div class="input-group">
+                    <input type="text" id="input-ticket-code" placeholder="Nhập mã vé hoặc mã QR..." autocomplete="off">
+                    <button type="button" class="btn-submit" id="btn-verify">KTra & Soát Vé</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Kết quả Soát Vé -->
+        <div class="scanner-card result-card">
+            <div id="result-status-container">
+                <div class="result-status-badge status-warning">
+                    ⏳ SẴN SÀNG SOÁT VÉ<br>
+                    <span style="font-size: 0.85rem; font-weight: 500; opacity: 0.8;">Vui lòng đưa mã QR vào camera hoặc nhập mã vé</span>
+                </div>
+            </div>
+
+            <div class="info-list" id="ticket-info-details" style="display: none;">
+                <div class="info-item">
+                    <span class="label">Mã vé:</span>
+                    <span class="val" id="res-code" style="color: #a855f7;">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Khách hàng:</span>
+                    <span class="val" id="res-user">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Số ghế:</span>
+                    <span class="val" id="res-seat" style="color: #10b981; font-size: 1.1rem;">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Phòng chiếu:</span>
+                    <span class="val" id="res-room">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Chi nhánh rạp:</span>
+                    <span class="val" id="res-cinema">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Giá vé:</span>
+                    <span class="val" id="res-price">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Thời gian soát:</span>
+                    <span class="val" id="res-used-at" style="color: #e4e4e7;">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script QR Code Scanner -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let html5QrcodeScanner = null;
+        let isProcessing = false;
+
+        const btnStartCam = document.getElementById('btn-start-cam');
+        const btnStopCam = document.getElementById('btn-stop-cam');
+        const btnVerify = document.getElementById('btn-verify');
+        const inputCode = document.getElementById('input-ticket-code');
+        const cameraSelect = document.getElementById('camera-select');
+
+        // Tự động tải danh sách Camera trên máy tính & Iriun Webcam từ điện thoại
+        function loadCameras() {
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length > 0) {
+                    cameraSelect.innerHTML = '';
+                    let iriunFound = false;
+
+                    devices.forEach((device, index) => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        const label = device.label || `Camera ${index + 1}`;
+                        option.text = label;
+
+                        // Tự động ưu tiên chọn Iriun Webcam nếu tìm thấy
+                        if (label.toLowerCase().includes('iriun')) {
+                            option.selected = true;
+                            iriunFound = true;
+                        }
+                        cameraSelect.appendChild(option);
+                    });
+
+                    if (iriunFound) {
+                        console.log("Đã phát hiện và tự động chọn Iriun Webcam!");
+                    }
+                } else {
+                    cameraSelect.innerHTML = '<option value="">Không tìm thấy Camera / Iriun Webcam</option>';
+                }
+            }).catch(err => {
+                console.warn("Chưa được cấp quyền Camera:", err);
+                cameraSelect.innerHTML = '<option value="">Nhấp để cấp quyền Camera cho trình duyệt...</option>';
+            });
+        }
+
+        // Tạo hiệu ứng âm thanh beep báo hiệu
+        function playBeepSound(isSuccess) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = isSuccess ? 'sine' : 'square';
+                osc.frequency.setValueAtTime(isSuccess ? 880 : 300, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + (isSuccess ? 0.2 : 0.4));
+            } catch (e) { }
+        }
+
+        // Bật Camera Quét (Hỗ trợ Iriun Webcam)
+        function startCamera() {
+            const selectedDeviceId = cameraSelect.value;
+
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                    initScan(selectedDeviceId);
+                }).catch(() => {
+                    html5QrcodeScanner = null;
+                    initScan(selectedDeviceId);
+                });
+            } else {
+                initScan(selectedDeviceId);
+            }
+        }
+
+        function initScan(deviceId) {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+            const cameraConstraint = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" };
+
+            html5QrcodeScanner.start(
+                cameraConstraint,
+                config,
+                onScanSuccess,
+                onScanError
+            ).catch(err => {
+                // Fallback nếu deviceId lỗi, mở camera môi trường
+                html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanError)
+                    .catch(e => {
+                        alert("Vui lòng cấp quyền truy cập Camera trên trình duyệt để sử dụng Iriun Webcam: " + e);
+                        html5QrcodeScanner = null;
+                    });
+            });
+        }
+
+        // Tắt Camera
+        function stopCamera() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                }).catch(err => {
+                    html5QrcodeScanner = null;
+                });
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isProcessing) return;
+            isProcessing = true;
+            inputCode.value = decodedText;
+            verifyTicket(decodedText).finally(() => {
+                setTimeout(() => { isProcessing = false; }, 2000);
+            });
+        }
+
+        function onScanError(errorMessage) {
+            // Bỏ qua lỗi quét liên tục khi chưa thấy QR
+        }
+
+        // Gọi API xác thực vé
+        function verifyTicket(code) {
+            if (!code) {
+                alert("Vui lòng nhập Mã vé!");
+                return Promise.resolve();
+            }
+
+            const statusContainer = document.getElementById('result-status-container');
+            const infoDetails = document.getElementById('ticket-info-details');
+
+            statusContainer.innerHTML = `
+                <div class="result-status-badge status-warning">
+                    ⏳ ĐANG KIỂM TRA MÃ VÉ: ${code}...
+                </div>
+            `;
+
+            return fetch('/admin/staff/api/verify-ticket/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ticket_code: code })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    infoDetails.style.display = 'flex';
+
+                    if (data.success) {
+                        playBeepSound(true);
+                        statusContainer.innerHTML = `
+                        <div class="result-status-badge status-success">
+                            ${data.message}
+                        </div>
+                    `;
+                        document.getElementById('res-code').textContent = data.ticket_info.ticket_code;
+                        document.getElementById('res-user').textContent = data.ticket_info.user_name;
+                        document.getElementById('res-seat').textContent = data.ticket_info.seat_number;
+                        document.getElementById('res-room').textContent = data.ticket_info.room_name;
+                        document.getElementById('res-cinema').textContent = data.ticket_info.cinema_name;
+                        document.getElementById('res-price').textContent = data.ticket_info.price;
+                        document.getElementById('res-used-at').textContent = data.ticket_info.used_at;
+                    } else {
+                        playBeepSound(false);
+                        const statusClass = data.status_type === 'ALREADY_USED' ? 'status-error' : 'status-error';
+                        statusContainer.innerHTML = `
+                        <div class="result-status-badge ${statusClass}">
+                            ${data.message}
+                        </div>
+                    `;
+
+                        if (data.ticket_info) {
+                            document.getElementById('res-code').textContent = data.ticket_info.ticket_code;
+                            document.getElementById('res-user').textContent = data.ticket_info.user_name;
+                            document.getElementById('res-seat').textContent = data.ticket_info.seat_number;
+                            document.getElementById('res-room').textContent = data.ticket_info.room_name;
+                            document.getElementById('res-cinema').textContent = data.ticket_info.cinema_name || '-';
+                            document.getElementById('res-price').textContent = data.ticket_info.price;
+                            document.getElementById('res-used-at').textContent = data.used_at || 'Đã soát trước đó';
+                        }
+                    }
+                })
+                .catch(err => {
+                    playBeepSound(false);
+                    statusContainer.innerHTML = `
+                    <div class="result-status-badge status-error">
+                        ❌ LỖI KẾT NỐI HỆ THỐNG!
+                    </div>
+                `;
+                });
+        }
+
+        btnStartCam.addEventListener('click', startCamera);
+        btnStopCam.addEventListener('click', stopCamera);
+        cameraSelect.addEventListener('change', startCamera);
+
+        btnVerify.addEventListener('click', function () {
+            verifyTicket(inputCode.value.trim());
+        });
+
+        inputCode.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                verifyTicket(inputCode.value.trim());
+            }
+        });
+
+        // Nạp danh sách camera & Khởi động
+        loadCameras();
+        startCamera();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,261 @@
+[
+  {
+    "model": "CinemaBook.category",
+    "pk": 1,
+    "fields": {
+      "name": "Hành động",
+      "description": "Phim thể loại hành động, bạo lực, hồi hộp",
+      "created_at": "2026-08-03T10:00:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.category",
+    "pk": 2,
+    "fields": {
+      "name": "Khoa học viễn tưởng",
+      "description": "Phim khoa học viễn tưởng, tương lai, khám phá",
+      "created_at": "2026-08-03T10:05:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.status",
+    "pk": 1,
+    "fields": {
+      "name": "Hoạt động",
+      "description": "Phòng đang mở để chiếu phim",
+      "created_at": "2026-08-03T10:10:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.status",
+    "pk": 2,
+    "fields": {
+      "name": "Bảo trì",
+      "description": "Phòng đang bảo trì",
+      "created_at": "2026-08-03T10:12:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.statusmovie",
+    "pk": 1,
+    "fields": {
+      "name_status": "Đang chiếu"
+    }
+  },
+  {
+    "model": "CinemaBook.statusmovie",
+    "pk": 2,
+    "fields": {
+      "name_status": "Sắp chiếu"
+    }
+  },
+  {
+    "model": "CinemaBook.cinema",
+    "pk": 1,
+    "fields": {
+      "name": "CGV Vincom Plaza",
+      "location": "Quận 1, TP.HCM",
+      "created_at": "2026-08-03T10:15:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.room",
+    "pk": 1,
+    "fields": {
+      "name": "Phòng A1",
+      "capacity": 20,
+      "created_at": "2026-08-03T10:16:00Z",
+      "cinema": 1,
+      "status": 1
+    }
+  },
+  {
+    "model": "CinemaBook.movie",
+    "pk": 1,
+    "fields": {
+      "movie_name": "Avatar: Dòng Chảy Của Nước",
+      "description": "Một bộ phim khoa học viễn tưởng hấp dẫn với hình ảnh 3D đẹp mắt, câu chuyện giàu cảm xúc và những cảnh hành động mãn nhãn.",
+      "trailer": "https://example.com/trailer/avatar-waterway",
+      "price": 120000.0,
+      "movie_format": "2D",
+      "duration": 160,
+      "poster": "/static/images/sample-poster.svg",
+      "active": true,
+      "created_at": "2026-08-03T10:20:00Z",
+      "status_movie": 1,
+      "categories": [1, 2]
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 1,
+    "fields": {
+      "seat_number": "A1",
+      "is_available": true,
+      "created_at": "2026-08-03T10:30:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 2,
+    "fields": {
+      "seat_number": "A2",
+      "is_available": true,
+      "created_at": "2026-08-03T10:31:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 3,
+    "fields": {
+      "seat_number": "A3",
+      "is_available": true,
+      "created_at": "2026-08-03T10:32:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 4,
+    "fields": {
+      "seat_number": "A4",
+      "is_available": true,
+      "created_at": "2026-08-03T10:33:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 5,
+    "fields": {
+      "seat_number": "B1",
+      "is_available": true,
+      "created_at": "2026-08-03T10:34:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 6,
+    "fields": {
+      "seat_number": "B2",
+      "is_available": true,
+      "created_at": "2026-08-03T10:35:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 7,
+    "fields": {
+      "seat_number": "B3",
+      "is_available": true,
+      "created_at": "2026-08-03T10:36:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 8,
+    "fields": {
+      "seat_number": "B4",
+      "is_available": true,
+      "created_at": "2026-08-03T10:37:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 9,
+    "fields": {
+      "seat_number": "C1",
+      "is_available": true,
+      "created_at": "2026-08-03T10:38:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seat",
+    "pk": 10,
+    "fields": {
+      "seat_number": "C2",
+      "is_available": true,
+      "created_at": "2026-08-03T10:39:00Z",
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.user",
+    "pk": 1,
+    "fields": {
+      "name": "Nguyễn Văn A",
+      "username": "nguyenvana",
+      "password": "123456",
+      "role": "ROLE_USER",
+      "avatar": "https://example.com/avatar/a.jpg",
+      "is_active": true,
+      "approved": true,
+      "number_phone": "0909123456",
+      "created_at": "2026-08-03T10:40:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.showtime",
+    "pk": 1,
+    "fields": {
+      "show_date": "2026-08-05",
+      "start_time": "19:30:00",
+      "end_time": "21:30:00",
+      "created_at": "2026-08-03T10:45:00Z",
+      "movie": 1,
+      "room": 1
+    }
+  },
+  {
+    "model": "CinemaBook.seatshowtimestatus",
+    "pk": 1,
+    "fields": {
+      "showtime": 1,
+      "seat": 1,
+      "user": 1,
+      "status": "FREE",
+      "lock_time": null
+    }
+  },
+  {
+    "model": "CinemaBook.seatshowtimestatus",
+    "pk": 2,
+    "fields": {
+      "showtime": 1,
+      "seat": 2,
+      "user": 1,
+      "status": "BOOKED",
+      "lock_time": "2026-08-03T11:00:00Z"
+    }
+  },
+  {
+    "model": "CinemaBook.booking",
+    "pk": 1,
+    "fields": {
+      "total_price": 240000.0,
+      "payment_method": "CASH",
+      "payment_status": "PENDING",
+      "created_at": "2026-08-03T11:15:00Z",
+      "showtime": 1,
+      "user": 1
+    }
+  },
+  {
+    "model": "CinemaBook.ticket",
+    "pk": 1,
+    "fields": {
+      "price": 120000.0,
+      "created_at": "2026-08-03T11:18:00Z",
+      "booking": 1,
+      "seat": 1,
+      "is_confirm": false
+    }
+  }
+]

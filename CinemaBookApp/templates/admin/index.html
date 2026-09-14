@@ -1,0 +1,242 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/index.css' %}">
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+    <!-- Hero Banner -->
+    <div class="dashboard-hero">
+        <div class="hero-title-group">
+            <h1>
+                Quản trị CineBook 
+                {% if user.profile.cinema %}
+                <span class="hero-badge" style="background: rgba(192, 132, 252, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4);">
+                    📍 Admin Nhánh: {{ user.profile.cinema.name }}
+                </span>
+                {% else %}
+                <span class="hero-badge">v2.0 Superadmin</span>
+                {% endif %}
+            </h1>
+            <p>
+                {% if user.profile.cinema %}
+                Bảng điều khiển trung tâm quản lý suất chiếu, lịch sử mua vé và báo cáo doanh thu thuộc chi nhánh rạp <strong>{{ user.profile.cinema.name }}</strong>.
+                {% else %}
+                Bảng điều khiển trung tâm quản lý cụm rạp, bộ phim, suất chiếu và doanh thu toàn hệ thống.
+                {% endif %}
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a href="/admin/revenue-stats/" class="hero-btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Xem báo cáo doanh thu rạp
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Shortcuts Title -->
+    <div class="section-header">
+        <h2 class="section-title">
+            Thao tác nhanh <span class="tag">Quick Actions</span>
+        </h2>
+    </div>
+
+    <div class="quick-stats">
+        <!-- 1. Quản lý Suất chiếu -->
+        <a href="/admin/CinemaBook/showtime/" class="stat-card" style="border-color: rgba(251, 191, 36, 0.4);">
+            <div class="stat-top">
+                <div class="stat-icon" style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4);">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="17" rx="3" ry="3"></rect>
+                        <line x1="16" y1="2" x2="16" y2="5"></line>
+                        <line x1="8" y1="2" x2="8" y2="5"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <circle cx="12" cy="15" r="3.5"></circle>
+                        <polyline points="12 13.2 12 15 13.5 15"></polyline>
+                    </svg>
+                </div>
+                <span class="stat-pill" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">LỊCH CHIẾU</span>
+            </div>
+            <div class="stat-bottom">
+                <h3>Quản lý Suất chiếu</h3>
+                <div class="stat-value">
+                    Thêm & Xem <span class="arrow-icon">➔</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- 2. Lịch sử mua vé -->
+        <a href="/admin/CinemaBook/booking/" class="stat-card" style="border-color: rgba(16, 185, 129, 0.4);">
+            <div class="stat-top">
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4);">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path>
+                    </svg>
+                </div>
+                <span class="stat-pill" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">LỊCH SỬ</span>
+            </div>
+            <div class="stat-bottom">
+                <h3>Lịch sử Mua vé</h3>
+                <div class="stat-value">
+                    Xem Đơn vé <span class="arrow-icon">➔</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- 3. Quản lý Rạp & Phòng -->
+        <a href="/admin/CinemaBook/cinema/" class="stat-card">
+            <div class="stat-top">
+                <div class="stat-icon" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4);">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 5C8 3.5 16 3.5 21 5V11C16 9.5 8 9.5 3 11V5Z" fill="rgba(56, 189, 248, 0.25)"></path>
+                        <path d="M4 15C4 14.4 4.4 14 5 14C5.6 14 6 14.4 6 15V16H4V15ZM8 15C8 14.4 8.4 14 9 14C9.6 14 10 14.4 10 15V16H8V15ZM12 15C12 14.4 12.4 14 13 14C13.6 14 14 14.4 14 15V16H12V15ZM16 15C16 14.4 16.4 14 17 14C17.6 14 18 14.4 18 15V16H16V15Z" fill="#38bdf8"></path>
+                        <path d="M3 18C3 17.4 3.4 17 4 17C4.6 17 5 17.4 5 18V19H3V18ZM7 18C7 17.4 7.4 17 8 17C8.6 17 9 17.4 9 18V19H7V18ZM11 18C11 17.4 11.4 17 12 17C12.6 17 13 17.4 13 18V19H11V18ZM15 18C15 17.4 15.4 17 16 17C16.6 17 17 17.4 17 18V19H15V18ZM19 18C19 17.4 19.4 17 20 17C20.6 17 21 17.4 21 18V19H19V18Z" fill="#38bdf8"></path>
+                        <line x1="2" y1="21" x2="22" y2="21" stroke-width="2"></line>
+                    </svg>
+                </div>
+                <span class="stat-pill" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">CHI NHÁNH</span>
+            </div>
+            <div class="stat-bottom">
+                <h3>Rạp & Phòng chiếu</h3>
+                <div class="stat-value">
+                    Thông tin <span class="arrow-icon">➔</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- 4. Thống kê doanh thu -->
+        <a href="/admin/revenue-stats/" class="stat-card" style="border-color: rgba(225, 29, 72, 0.4);">
+            <div class="stat-top">
+                <div class="stat-icon" style="background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.4);">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <span class="stat-pill" style="background: rgba(225, 29, 72, 0.2); color: #e11d48;">DOANH THU</span>
+            </div>
+            <div class="stat-bottom">
+                <h3>Doanh thu rạp</h3>
+                <div class="stat-value">
+                    Báo cáo <span class="arrow-icon">➔</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Models Section Header -->
+    <div class="section-header" style="margin-top: 12px;">
+        <h2 class="section-title">
+            Quản lý dữ liệu hệ thống <span class="tag">Database Models</span>
+        </h2>
+    </div>
+
+    {% if app_list %}
+    {% for app in app_list %}
+    <div class="app-{{ app.app_label }} module">
+        <table>
+            <caption>
+                <a href="{{ app.app_url }}" class="section"
+                    title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">
+                     {{ app.name }}
+                </a>
+            </caption>
+            {% for model in app.models %}
+            <tr class="model-{{ model.object_name|lower }}">
+                {% if model.admin_url %}
+                <th scope="row">
+                    <a href="{{ model.admin_url }}">
+                         {{ model.name }}
+                    </a>
+                </th>
+                {% else %}
+                <th scope="row">{{ model.name }}</th>
+                {% endif %}
+
+                {% if model.add_url %}
+                <td style="width: 120px; text-align: right;">
+                    <a href="{{ model.add_url }}" class="btn-action-add">
+                        ＋ {% translate 'Add' %}
+                    </a>
+                </td>
+                {% else %}
+                <td>&nbsp;</td>
+                {% endif %}
+
+                {% if model.view_only %}
+                <td style="width: 150px; text-align: right;">
+                    <a href="{{ model.admin_url }}" class="btn-action-change" style="background: linear-gradient(135deg, #e11d48, #be123c); color: #ffffff; border: none; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);">
+                        Xem chi tiết
+                    </a>
+                </td>
+                {% else %}
+                {% if model.admin_url %}
+                <td style="width: 150px; text-align: right;">
+                    <a href="{{ model.admin_url }}" class="btn-action-change" style="background: linear-gradient(135deg, #e11d48, #be123c); color: #ffffff; border: none; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);">
+                        Xem chi tiết
+                    </a>
+                </td>
+                {% else %}
+                <td>&nbsp;</td>
+                {% endif %}
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="color: #a1a1aa; padding: 20px;">{% translate "You don’t have permission to view or edit anything." %}</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related">
+    <div class="module" id="recent-actions-module">
+        <h2>Hoạt động gần đây</h2>
+        <h3>Thao tác của bạn</h3>
+        {% load log %}
+        {% get_admin_log 10 as admin_log for_user user %}
+        {% if not admin_log %}
+        <p style="padding: 20px; color: #a1a1aa; margin: 0; text-align: center;">Chưa có hoạt động nào gần đây.</p>
+        {% else %}
+        <div style="padding: 8px 0;">
+            {% for entry in admin_log %}
+            <div class="action-item">
+                {% if entry.is_addition %}
+                <span class="action-tag add">＋ Thêm mới</span>
+                {% elif entry.is_change %}
+                <span class="action-tag change">✎ Chỉnh sửa</span>
+                {% elif entry.is_deletion %}
+                <span class="action-tag delete">✕ Xóa</span>
+                {% endif %}
+
+                <div style="font-size: 0.85rem; color: #ffffff; margin-top: 4px; font-weight: 500;">
+                    {% if entry.content_type %}
+                    <span style="color: #a1a1aa;">[{{ entry.content_type.name }}]</span>
+                    {% endif %}
+
+                    {% if entry.is_deletion or not entry.get_admin_url %}
+                    <span>{{ entry.object_repr }}</span>
+                    {% else %}
+                    <a href="{{ entry.get_admin_url }}" style="color: #ffffff; font-weight: 700; text-decoration: underline;">
+                        {{ entry.object_repr }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

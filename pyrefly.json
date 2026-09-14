@@ -1,0 +1,8 @@
+{
+  "search_path": [
+    "d:/CinemaBook/venv/Lib/site-packages",
+    "d:/CinemaBook/CinemaBookApp",
+    "venv/Lib/site-packages",
+    "CinemaBookApp"
+  ]
+}

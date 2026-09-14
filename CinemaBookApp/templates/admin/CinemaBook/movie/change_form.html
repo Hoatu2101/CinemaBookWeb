@@ -1,0 +1,607 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* Two-column layout for Movie detail/form */
+    .movie-form-wrapper {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 28px;
+        align-items: start;
+        margin-top: 16px;
+    }
+
+    @media (max-width: 992px) {
+        .movie-form-wrapper {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Left Poster Column */
+    .movie-poster-card {
+        background: var(--card-dark, #18181b);
+        border: 1px solid var(--border-dark, #27272a);
+        border-radius: 16px;
+        padding: 20px;
+        position: sticky;
+        top: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .poster-preview-box {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        background: #09090b;
+        border: 2px dashed #3f3f46;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .poster-preview-box:hover {
+        border-color: var(--primary-red, #e11d48);
+    }
+
+    .poster-preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .poster-preview-box:hover img {
+        transform: scale(1.02);
+    }
+
+    .poster-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        color: #71717a;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .poster-placeholder svg {
+        opacity: 0.6;
+    }
+
+    .poster-upload-zone {
+        margin-top: 16px;
+    }
+
+    .poster-upload-zone label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #a1a1aa;
+        margin-bottom: 8px;
+    }
+
+    /* Quick Info Badges */
+    .movie-quick-stats {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .stat-badge {
+        background: #121215;
+        border: 1px solid #27272a;
+        border-radius: 10px;
+        padding: 10px 12px;
+        text-align: center;
+    }
+
+    .stat-badge .stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #71717a;
+        font-weight: 600;
+    }
+
+    .stat-badge .stat-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 4px;
+    }
+
+    .badge-active {
+        color: #10b981 !important;
+    }
+
+    .badge-inactive {
+        color: #ef4444 !important;
+    }
+
+    /* Right Info Column */
+    .movie-details-card {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .movie-fieldset-group {
+        background: var(--card-dark, #18181b);
+        border: 1px solid var(--border-dark, #27272a);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .movie-fieldset-group h3 {
+        margin: 0 0 18px 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #27272a;
+        padding-bottom: 12px;
+    }
+
+    .movie-fieldset-group h3 svg {
+        color: var(--primary-red, #e11d48);
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .custom-form-field {
+        margin-bottom: 16px;
+    }
+
+    .custom-form-field label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #a1a1aa;
+        margin-bottom: 6px;
+    }
+
+    .custom-form-field input,
+    .custom-form-field select,
+    .custom-form-field textarea {
+        width: 100%;
+    }
+
+    /* Trailer Preview Box */
+    .trailer-preview-wrapper {
+        margin-top: 12px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #000;
+        aspect-ratio: 16 / 9;
+        display: none;
+        border: 1px solid #27272a;
+    }
+
+    .trailer-preview-wrapper iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* Checkbox toggle design */
+    .checkbox-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        padding: 10px 14px;
+        background: #121215;
+        border: 1px solid #27272a;
+        border-radius: 10px;
+        transition: border-color 0.2s;
+    }
+
+    .checkbox-toggle:hover {
+        border-color: #3f3f46;
+    }
+</style>
+{% endblock %}
+
+{% block field_sets %}
+<div class="movie-form-wrapper">
+    <!-- LEFT COLUMN: POSTER & QUICK STATS -->
+    <div class="movie-poster-card">
+        <h3
+            style="margin: 0 0 16px 0; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            Poster Phim
+        </h3>
+
+        <div class="poster-preview-box" id="poster-preview-box">
+            {% if original and original.poster %}
+            <img id="poster-img-preview" src="{{ original.poster.url }}" alt="{{ original.movie_name }}">
+            {% else %}
+            <img id="poster-img-preview" src="" alt="Poster Preview" style="display: none;">
+            <div class="poster-placeholder" id="poster-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Chưa có ảnh poster.<br><small style="color: #52525b;">Chọn tập tin bên dưới để tải ảnh
+                        lên</small></span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="poster-upload-zone">
+            <div class="custom-form-field">
+                {{ adminform.form.poster.errors }}
+                <label for="{{ adminform.form.poster.id_for_label }}">Tải lên Poster mới:</label>
+                {{ adminform.form.poster }}
+                {% if adminform.form.poster.help_text %}
+                <p class="help" style="font-size: 0.75rem; color: #71717a; margin-top: 4px;">{{
+                    adminform.form.poster.help_text }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if original %}
+        <div class="movie-quick-stats">
+            <div class="stat-badge">
+                <div class="stat-label">Trạng thái</div>
+                <div class="stat-value {% if original.active %}badge-active{% else %}badge-inactive{% endif %}">
+                    {% if original.active %}Hoạt động{% else %}Ẩn{% endif %}
+                </div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-label">Thời lượng</div>
+                <div class="stat-value">{{ original.duration|default:"--" }} phút</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-label">Năm phát hành</div>
+                <div class="stat-value">{{ original.release_year|default:"--" }}</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-label">Phân loại</div>
+                <div class="stat-value" style="font-size: 0.8rem; font-weight: 600;">
+                    {{ original.status_movie.name_status|default:"--" }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN: MOVIE DETAILS & INPUT FIELDS -->
+    <div class="movie-details-card">
+        <!-- Section 1: Thông tin cơ bản -->
+        <div class="movie-fieldset-group">
+            <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Thông tin chung
+            </h3>
+
+            <div class="custom-form-field" style="margin-bottom: 20px;">
+                <label for="{{ adminform.form.movie_name.id_for_label }}" style="font-size: 0.9rem; font-weight: 700; color: #fff;">Tên Phim (*):</label>
+                {% if has_change_permission %}
+                    {{ adminform.form.movie_name.errors }}
+                    {{ adminform.form.movie_name }}
+                {% else %}
+                    <div style="color: #ffffff; font-size: 1rem; font-weight: 600; margin-top: 4px;">
+                        {{ original.movie_name|default:adminform.form.instance.movie_name|default:"--" }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-grid-2">
+                <div class="custom-form-field">
+                    <label for="{{ adminform.form.release_year.id_for_label }}">Năm phát hành:</label>
+                    {% if has_change_permission %}
+                        {{ adminform.form.release_year.errors }}
+                        {{ adminform.form.release_year }}
+                    {% else %}
+                        <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                            {{ original.release_year|default:adminform.form.instance.release_year|default:"--" }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="custom-form-field">
+                    <label for="{{ adminform.form.duration.id_for_label }}">Thời lượng (phút):</label>
+                    {% if has_change_permission %}
+                        {{ adminform.form.duration.errors }}
+                        {{ adminform.form.duration }}
+                    {% else %}
+                        <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                            {{ original.duration|default:adminform.form.instance.duration|default:"--" }} phút
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="custom-form-field">
+                    <label for="{{ adminform.form.status_movie.id_for_label }}">Trạng thái phim:</label>
+                    {% if has_change_permission %}
+                        {{ adminform.form.status_movie.errors }}
+                        {{ adminform.form.status_movie }}
+                    {% else %}
+                        <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                            {% if original and original.status_movie %}{{ original.status_movie.name_status }}{% elif adminform.form.instance.status_movie %}{{ adminform.form.instance.status_movie.name_status }}{% else %}--{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="custom-form-field" style="display: flex; align-items: center; gap: 10px; margin-top: 24px;">
+                    {% if has_change_permission %}
+                        <label class="checkbox-toggle" for="{{ adminform.form.active.id_for_label }}">
+                            {{ adminform.form.active }}
+                            <span style="font-weight: 600; color: #fff;">Hiển thị / Active</span>
+                        </label>
+                        {{ adminform.form.active.errors }}
+                    {% else %}
+                        <div style="color: #ffffff; font-size: 0.95rem;">
+                            Trạng thái hiển thị: {% if original.active or adminform.form.instance.active %}Hiển thị (Active){% else %}Ẩn{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Đội ngũ & Thể loại -->
+        <div class="movie-fieldset-group">
+            <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Thể loại & Đội ngũ sản xuất
+            </h3>
+
+            <div class="custom-form-field" style="margin-bottom: 20px;">
+                <label for="{{ adminform.form.categories.id_for_label }}">Thể loại Phim:</label>
+                {% if has_change_permission %}
+                    {{ adminform.form.categories.errors }}
+                    {{ adminform.form.categories }}
+                {% else %}
+                    <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                        {% if original %}
+                            {% for cat in original.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}--{% endfor %}
+                        {% else %}
+                            {% for cat in adminform.form.instance.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}--{% endfor %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-grid-2">
+                <div class="custom-form-field">
+                    <label for="{{ adminform.form.drirector.id_for_label }}">Đạo diễn:</label>
+                    {% if has_change_permission %}
+                        {{ adminform.form.drirector.errors }}
+                        {{ adminform.form.drirector }}
+                    {% else %}
+                        <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                            {{ original.drirector|default:adminform.form.instance.drirector|default:"--" }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="custom-form-field">
+                    <label for="{{ adminform.form.actor.id_for_label }}">Diễn viên chính:</label>
+                    {% if has_change_permission %}
+                        {{ adminform.form.actor.errors }}
+                        {{ adminform.form.actor }}
+                    {% else %}
+                        <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                            {{ original.actor|default:adminform.form.instance.actor|default:"--" }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Nội dung & Trailer -->
+        <div class="movie-fieldset-group">
+            <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                Mô tả & Trailer
+            </h3>
+
+            <div class="custom-form-field">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label for="{{ adminform.form.description.id_for_label }}" style="margin: 0;">Nội dung / Tóm tắt phim:</label>
+                    {% if has_change_permission %}
+                        <button type="button" id="btn-gemini-gen-desc"
+                            style="background: linear-gradient(135deg, #8b5cf6, #ec4899); border: none; color: #fff; padding: 6px 14px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; font-size: 0.78rem; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); transition: all 0.2s;">
+                            ⚡ ✨ Gemini AI: Viết Mô Tả Tự Động
+                        </button>
+                    {% endif %}
+                </div>
+                {% if has_change_permission %}
+                    {{ adminform.form.description.errors }}
+                    {{ adminform.form.description }}
+                {% else %}
+                    <div style="color: #ffffff; font-size: 0.95rem; line-height: 1.6; margin-top: 4px;">
+                        {% if original and original.description %}{{ original.description|linebreaksbr }}{% elif adminform.form.instance.description %}{{ adminform.form.instance.description|linebreaksbr }}{% else %}--{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="custom-form-field">
+                <label for="{{ adminform.form.trailer.id_for_label }}">URL Trailer (YouTube link):</label>
+                {% if has_change_permission %}
+                    {{ adminform.form.trailer.errors }}
+                    {{ adminform.form.trailer }}
+                {% else %}
+                    <div style="color: #ffffff; font-size: 0.95rem; margin-top: 4px;">
+                        {% if original and original.trailer %}
+                            <a href="{{ original.trailer }}" target="_blank" style="color: #ffffff; text-decoration: underline;">{{ original.trailer }}</a>
+                        {% elif adminform.form.instance.trailer %}
+                            <a href="{{ adminform.form.instance.trailer }}" target="_blank" style="color: #ffffff; text-decoration: underline;">{{ adminform.form.instance.trailer }}</a>
+                        {% else %}
+                            --
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <div class="trailer-preview-wrapper" id="trailer-preview-wrapper">
+                    <iframe id="trailer-iframe" src="" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Live Poster Image Preview Script
+        const posterInput = document.querySelector('input[type="file"][name="poster"]');
+        const posterImgPreview = document.getElementById('poster-img-preview');
+        const posterPlaceholder = document.getElementById('poster-placeholder');
+
+        if (posterInput) {
+            posterInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (evt) {
+                        if (posterImgPreview) {
+                            posterImgPreview.src = evt.target.result;
+                            posterImgPreview.style.display = 'block';
+                        }
+                        if (posterPlaceholder) {
+                            posterPlaceholder.style.display = 'none';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // 2. Live YouTube Trailer Preview Script
+        const trailerInput = document.querySelector('input[name="trailer"]');
+        const trailerWrapper = document.getElementById('trailer-preview-wrapper');
+        const trailerIframe = document.getElementById('trailer-iframe');
+
+        function updateTrailerPreview(url) {
+            if (!url || !trailerWrapper || !trailerIframe) return;
+
+            let videoId = '';
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+
+            if (match && match[2].length === 11) {
+                videoId = match[2];
+                trailerIframe.src = 'https://www.youtube-nocookie.com/embed/' + videoId;
+                trailerWrapper.style.display = 'block';
+            } else {
+                trailerWrapper.style.display = 'none';
+                trailerIframe.src = '';
+            }
+        }
+
+        if (trailerInput) {
+            updateTrailerPreview(trailerInput.value);
+            trailerInput.addEventListener('input', function () {
+                updateTrailerPreview(this.value);
+            });
+        }
+
+        // 3. Gemini AI Movie Description Generator Script
+        const btnGenDesc = document.getElementById('btn-gemini-gen-desc');
+        if (btnGenDesc) {
+            btnGenDesc.addEventListener('click', function (e) {
+                e.preventDefault();
+                const movieNameInput = document.querySelector('input[name="movie_name"]');
+                const directorInput = document.querySelector('input[name="drirector"]');
+                const actorInput = document.querySelector('input[name="actor"]');
+                const descTextarea = document.querySelector('textarea[name="description"]');
+                const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+
+                const movieName = movieNameInput ? movieNameInput.value.trim() : '';
+                if (!movieName) {
+                    alert('Vui lòng nhập Tên Phim trước khi tạo mô tả tự động!');
+                    return;
+                }
+
+                const director = directorInput ? directorInput.value.trim() : '';
+                const actor = actorInput ? actorInput.value.trim() : '';
+                const csrfToken = csrfInput ? csrfInput.value : '';
+
+                btnGenDesc.disabled = true;
+                btnGenDesc.textContent = '✨ Gemini AI đang soạn bài...';
+
+                const formData = new FormData();
+                formData.append('movie_name', movieName);
+                formData.append('director', director);
+                formData.append('actor', actor);
+                formData.append('csrfmiddlewaretoken', csrfToken);
+
+                fetch("{% url 'gemini_gen_description' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        btnGenDesc.disabled = false;
+                        btnGenDesc.textContent = '⚡ ✨ Gemini AI: Viết Mô Tả Tự Động';
+
+                        if (data.status === 'success' && data.description) {
+                            if (descTextarea) {
+                                descTextarea.value = data.description;
+                                descTextarea.style.border = '2px solid #8b5cf6';
+                                setTimeout(() => { descTextarea.style.border = ''; }, 2500);
+                            }
+                        } else {
+                            alert(data.message || 'Không thể khởi tạo mô tả từ Gemini!');
+                        }
+                    })
+                    .catch(err => {
+                        btnGenDesc.disabled = false;
+                        btnGenDesc.textContent = '⚡ ✨ Gemini AI: Viết Mô Tả Tự Động';
+                        alert('Lỗi kết nối Gemini AI: ' + err);
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

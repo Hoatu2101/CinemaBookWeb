@@ -1,0 +1,309 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Đăng Ký Tài Khoản Nhân Viên Rạp | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block content %}
+<style>
+    .staff-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 0 15px;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .staff-card {
+        background: #141414;
+        border: 1px solid #27272a;
+        border-top: 4px solid #e50914;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        padding: 30px;
+        color: #f4f4f5;
+        margin-bottom: 30px;
+    }
+
+    .staff-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #27272a;
+        padding-bottom: 18px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .staff-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .role-badge {
+        background: #e50914;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 4px 12px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .alert-box {
+        padding: 14px 18px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .alert-success {
+        background: #052e16;
+        border: 1px solid #15803d;
+        color: #4ade80;
+    }
+
+    .alert-error {
+        background: #450a0a;
+        border: 1px solid #dc2626;
+        color: #fca5a5;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #d4d4d8;
+    }
+
+    .form-group label span.required {
+        color: #e50914;
+    }
+
+    .form-control {
+        background: #09090b;
+        border: 1px solid #27272a;
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: #ffffff;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #e50914;
+        box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.25);
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #e50914, #b20710);
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 14px 32px;
+        font-size: 1rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 14px rgba(229, 9, 20, 0.4);
+    }
+
+    .btn-submit:hover {
+        background: linear-gradient(135deg, #ff1e27, #cb0913);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6);
+    }
+
+    .staff-table-card {
+        background: #141414;
+        border: 1px solid #27272a;
+        border-radius: 12px;
+        padding: 25px;
+        color: #f4f4f5;
+    }
+
+    .staff-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 0.9rem;
+    }
+
+    .staff-table th {
+        background: #09090b;
+        color: #a1a1aa;
+        font-weight: 700;
+        text-align: left;
+        padding: 12px 16px;
+        border-bottom: 2px solid #27272a;
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.5px;
+    }
+
+    .staff-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #27272a;
+        color: #e4e4e7;
+    }
+
+    .staff-table tr:hover td {
+        background: rgba(229, 9, 20, 0.05);
+    }
+
+    .cinema-tag {
+        background: #27272a;
+        color: #f4f4f5;
+        border: 1px solid #3f3f46;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="staff-container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-box {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="staff-card">
+        <div class="staff-header">
+            <h2>
+                <span>Đăng Ký Tài Khoản Nhân Viên Rạp</span>
+                <span class="role-badge">STAFF</span>
+            </h2>
+            <div style="font-size: 0.88rem; color: #a1a1aa;">
+                Giao diện khởi tạo tài khoản Nhân viên Soát vé hệ thống
+            </div>
+        </div>
+
+        <form method="POST" action="">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập (Username) <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Ví dụ: nhanvien_cgv1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Họ và tên nhân viên <span class="required">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mật khẩu <span class="required">*</span></label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Xác nhận mật khẩu <span class="required">*</span></label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Nhập lại mật khẩu" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Địa chỉ Email</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="nhanvien@cinebook.vn">
+                </div>
+
+                <div class="form-group">
+                    <label for="number_phone">Số điện thoại liên hệ</label>
+                    <input type="text" id="number_phone" name="number_phone" class="form-control" placeholder="0901234567">
+                </div>
+
+                <div class="form-group" style="grid-column: span 1 / -1;">
+                    <label for="cinema_id">Rạp / Chi nhánh phụ trách <span class="required">*</span></label>
+                    <select id="cinema_id" name="cinema_id" class="form-control" required>
+                        {% if user.is_superuser or user.profile.role == 'ROLE_ADMIN' %}
+                            <option value="">-- Tất cả rạp (Quyền hệ thống) --</option>
+                        {% endif %}
+                        {% for cinema in available_cinemas %}
+                            <option value="{{ cinema.id }}" {% if user_cinema and user_cinema.id == cinema.id %}selected{% endif %}>
+                                {{ cinema.name }} ({{ cinema.location }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; text-align: right;">
+                <button type="submit" class="btn-submit">
+                    Tạo Tài Khoản Nhân Viên
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Danh sách Nhân viên rạp hiện tại -->
+    <div class="staff-table-card">
+        <h3 style="margin: 0 0 15px 0; font-size: 1.15rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+            <span>Danh Sách Nhân Viên Rạp (Mới nhất)</span>
+            <span style="font-size: 0.85rem; font-weight: 600; color: #a1a1aa;">Tổng cộng: {{ staff_profiles.count }} tài khoản</span>
+        </h3>
+
+        <table class="staff-table">
+            <thead>
+                <tr>
+                    <th>Họ và Tên</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Email / SĐT</th>
+                    <th>Rạp Phụ Trách</th>
+                    <th>Vai Trò</th>
+                    <th>Ngày Tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for profile in staff_profiles %}
+                <tr>
+                    <td style="font-weight: 700; color: #ffffff;">{{ profile.name|default:profile.user.first_name|default:profile.user.username }}</td>
+                    <td style="font-family: monospace; font-weight: 600; color: #ef4444;">@{{ profile.user.username }}</td>
+                    <td>
+                        <div>{{ profile.user.email|default:"Chưa có email" }}</div>
+                        <div style="font-size: 0.8rem; color: #71717a;">{{ profile.number_phone|default:"" }}</div>
+                    </td>
+                    <td>
+                        {% if profile.cinema %}
+                            <span class="cinema-tag">{{ profile.cinema.name }}</span>
+                        {% else %}
+                            <span style="color: #71717a;">Tất cả rạp</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="role-badge">STAFF</span></td>
+                    <td style="color: #71717a; font-size: 0.82rem;">{{ profile.user.date_joined|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #71717a; padding: 25px;">Chưa có tài khoản Nhân viên rạp nào trên hệ thống.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

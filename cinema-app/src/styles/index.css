@@ -1,0 +1,41 @@
+body {
+  margin: 0;
+  background-color: #0d0d12 !important;
+  color: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  background-color: #0d0d12 !important;
+  min-height: 100vh;
+  color: #ffffff;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .navbar, footer, .btn, button, a:not(.printable-ticket a) {
+    display: none !important;
+  }
+  .printable-ticket {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+    page-break-inside: avoid;
+    margin-bottom: 20px !important;
+  }
+  .printable-ticket h3, .printable-ticket p, .printable-ticket span {
+    color: #000000 !important;
+  }
+}

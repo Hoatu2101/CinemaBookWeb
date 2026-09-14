@@ -1,0 +1,109 @@
+/* =========================================
+   GIAO DIỆN CINEBOOK HEADER CHUẨN
+   ========================================= */
+
+.cinema-header {
+    background-color: #0f0f0f;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    height: 70px;
+    border-bottom: 1px solid #1f1f1f;
+}
+
+/* --- LOGO --- */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    color: #ff0000;
+}
+
+.logo-text {
+    margin: 0;
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+/* --- MENU BÊN PHẢI --- */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    transition: opacity 0.2s ease;
+}
+
+.nav-item:hover {
+    opacity: 0.7;
+}
+
+.nav-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.nav-item-red {
+    color: #ff0000;
+}
+
+.nav-item-white {
+    color: #ffffff;
+}
+
+/* --- CỤM ĐĂNG NHẬP / ĐĂNG KÝ --- */
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-left: 20px;
+    padding-left: 30px;
+    border-left: 1px solid #333;
+}
+
+.btn-login {
+    color: #e0e0e0;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.btn-login:hover {
+    color: #ff0000;
+}
+
+.btn-register {
+    background-color: #ff0000;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 8px 24px;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(255, 0, 0, 0.2);
+}
+
+.btn-register:hover {
+    background-color: #cc0000;
+    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.4);
+    transform: translateY(-1px);
+}

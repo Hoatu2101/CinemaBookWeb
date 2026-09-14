@@ -1,0 +1,19 @@
+# Root Gitignore for Fullstack CinemaBook Project
+
+# Python / Django
+*.pyc
+__pycache__/
+*.sqlite3
+db.sqlite3
+CinemaBookApp/media/
+CinemaBookApp/staticfiles/
+.env
+venv/
+.venv/
+
+# Node / React
+node_modules/
+cinema-app/node_modules/
+cinema-app/build/
+.DS_Store
+*.log

@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block usertools %}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+{% if form.errors and not form.non_field_errors %}
+<p class="errornote" style="background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; padding: 12px; border-radius: 8px; max-width: 420px; margin: 0 auto 20px auto; text-align: center; font-weight: 600;">
+{% if form.errors.items|length == 1 %}{% translate "Vui lòng kiểm tra lại thông tin đăng nhập bên dưới." %}{% else %}{% translate "Vui lòng sửa các lỗi bên dưới." %}{% endif %}
+</p>
+{% endif %}
+
+{% if form.non_field_errors %}
+{% for error in form.non_field_errors %}
+<p class="errornote" style="background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; padding: 12px; border-radius: 8px; max-width: 420px; margin: 0 auto 20px auto; text-align: center; font-weight: 600;">
+    {{ error }}
+</p>
+{% endfor %}
+{% endif %}
+
+<div id="content-main" style="max-width: 440px; margin: 40px auto; background: #14141d; padding: 36px 32px; border-radius: 16px; border: 1px solid #dc2626; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);">
+  <div style="text-align: center; margin-bottom: 28px;">
+    <h2 style="color: #ff4d4d; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; font-size: 1.8rem;">CINEBOOK</h2>
+    <p style="color: #9ca3af; font-size: 0.92rem; margin: 0; font-weight: 500;">Đăng nhập Hệ thống Rạp Phim</p>
+  </div>
+
+  <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+    <div class="form-row" style="margin-bottom: 18px; border: none; padding: 0;">
+      {{ form.username.errors }}
+      <label for="id_username" class="required" style="color: #e4e4e7; font-weight: 600; margin-bottom: 8px; display: block; font-size: 0.9rem;">Tên đăng nhập / Email:</label>
+      <input type="text" name="username" autofocus maxlength="254" required id="id_username" placeholder="Nhập tên đăng nhập..." style="width: 100%; padding: 12px 14px; background: #07070a; border: 1px solid #3f3f5a; border-radius: 8px; color: #ffffff; font-size: 0.95rem; outline: none; box-sizing: border-box;">
+    </div>
+    
+    <div class="form-row" style="margin-bottom: 26px; border: none; padding: 0;">
+      {{ form.password.errors }}
+      <label for="id_password" class="required" style="color: #e4e4e7; font-weight: 600; margin-bottom: 8px; display: block; font-size: 0.9rem;">Mật khẩu:</label>
+      <input type="password" name="password" required id="id_password" placeholder="Nhập mật khẩu..." style="width: 100%; padding: 12px 14px; background: #07070a; border: 1px solid #3f3f5a; border-radius: 8px; color: #ffffff; font-size: 0.95rem; outline: none; box-sizing: border-box;">
+      <input type="hidden" name="next" value="{{ next }}">
+    </div>
+
+    <div class="submit-row" style="margin: 0; padding: 0; background: none; border: none; text-align: center;">
+      <input type="submit" value="ĐĂNG NHẬP HỆ THỐNG" style="width: 100%; background: #dc2626; color: #ffffff; border: none; padding: 14px; border-radius: 8px; font-weight: 800; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.8px; transition: all 0.2s ease;">
+    </div>
+  </form>
+</div>
+{% endblock %}

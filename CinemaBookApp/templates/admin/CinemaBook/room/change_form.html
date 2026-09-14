@@ -1,0 +1,511 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .room-admin-wrapper {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 24px;
+        margin-top: 16px;
+        align-items: start;
+    }
+
+    @media (max-width: 992px) {
+        .room-admin-wrapper {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Left Column Card */
+    .room-form-card {
+        background: var(--card-dark, #18181b);
+        border: 1px solid var(--border-dark, #27272a);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .room-form-card h3 {
+        margin: 0 0 18px 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #27272a;
+        padding-bottom: 12px;
+    }
+
+    .custom-field-group {
+        margin-bottom: 18px;
+        width: 100%;
+    }
+
+    .custom-field-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #a1a1aa;
+        margin-bottom: 6px;
+    }
+
+    .custom-field-group input,
+    .custom-field-group select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .custom-field-group .related-widget-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .custom-field-group .related-widget-wrapper select {
+        flex: 1;
+        min-width: 0;
+    }
+
+
+    /* Batch Generator Container */
+    .batch-gen-box {
+        margin-top: 24px;
+        background: #121215;
+        border: 1px solid #27272a;
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .batch-gen-box h4 {
+        margin: 0 0 12px 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #e11d48;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .batch-btn {
+        width: 100%;
+        background: #e11d48;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 10px;
+    }
+
+    .batch-btn:hover {
+        background: #be123c;
+        transform: translateY(-1px);
+    }
+
+    /* Right Column - Visual Room Seat Map */
+    .room-diagram-card {
+        background: var(--card-dark, #18181b);
+        border: 1px solid var(--border-dark, #27272a);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Cinema Curved Screen */
+    .screen-wrapper {
+        text-align: center;
+        margin-bottom: 32px;
+        perspective: 400px;
+    }
+
+    .cinema-screen {
+        height: 38px;
+        background: linear-gradient(180deg, rgba(225, 29, 72, 0.6) 0%, rgba(225, 29, 72, 0.1) 100%);
+        border-top: 4px solid #e11d48;
+        border-radius: 50% 50% 0 0 / 20px 20px 0 0;
+        box-shadow: 0 15px 35px rgba(225, 29, 72, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin: 0 auto;
+        width: 85%;
+        position: relative;
+    }
+
+    .cinema-screen::after {
+        content: 'MÀN HÌNH CHIẾU';
+        position: absolute;
+        bottom: -22px;
+        font-size: 0.7rem;
+        color: #71717a;
+        letter-spacing: 2px;
+    }
+
+    .seat-legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        background: #121215;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: 1px solid #27272a;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: #a1a1aa;
+        font-weight: 600;
+    }
+
+    .legend-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+    }
+
+    .dot-available { background: #10b981; }
+    .dot-unavailable { background: #ef4444; }
+    .dot-empty { background: transparent; border: 1.5px dashed #52525b; }
+
+    /* Room Header Info */
+    .room-header-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #27272a;
+    }
+
+    .room-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .room-stats-badge {
+        font-size: 0.8rem;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+
+    /* Seat Matrix Grid */
+    .seat-grid-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    .seat-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .row-label {
+        width: 24px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #71717a;
+    }
+
+    .seat-cell {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+
+    .seat-cell:hover {
+        transform: scale(1.15);
+        z-index: 10;
+    }
+
+    .seat-available {
+        background: #10b981;
+        color: #ffffff;
+        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .seat-unavailable {
+        background: #ef4444;
+        color: #ffffff;
+        box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .seat-empty {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1.5px dashed #3f3f46;
+        color: #71717a;
+    }
+</style>
+{% endblock %}
+
+{% block field_sets %}
+<div class="room-admin-wrapper">
+    <!-- LEFT COLUMN: ROOM DETAILS FORM & QUICK GENERATOR -->
+    <div class="room-form-card">
+        <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            Thông Tin Phòng Chiếu
+        </h3>
+
+        {% for fieldset in adminform %}
+            {% for line in fieldset %}
+                {% for field in line %}
+                    <div class="custom-field-group">
+                        {{ field.field.errors }}
+                        <label for="{{ field.field.id_for_label }}">{{ field.field.label }}:</label>
+                        {{ field.field }}
+                        {% if field.field.help_text %}
+                            <p class="help" style="font-size: 0.75rem; color: #71717a; margin-top: 4px;">{{ field.field.help_text }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        {% endfor %}
+
+        {% if original %}
+        <!-- BATCH GENERATOR SECTION FOR ROOM -->
+        <div class="batch-gen-box">
+            <h4>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Tạo Ghế Tự Động Cho Phòng Này
+            </h4>
+            <p style="font-size: 0.78rem; color: #a1a1aa; margin: 0 0 12px 0;">Khởi tạo nhanh toàn bộ danh sách ghế theo số hàng và số cột.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 0.75rem; color: #a1a1aa; display: block; margin-bottom: 4px;">Số hàng (A, B...):</label>
+                    <select id="batch-rows-select" style="width: 100%;">
+                        <option value="4">4 Hàng (A-D)</option>
+                        <option value="6" selected>6 Hàng (A-F)</option>
+                        <option value="8">8 Hàng (A-H)</option>
+                        <option value="10">10 Hàng (A-J)</option>
+                        <option value="12">12 Hàng (A-L)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; color: #a1a1aa; display: block; margin-bottom: 4px;">Ghế/Hàng:</label>
+                    <select id="batch-cols-select" style="width: 100%;">
+                        <option value="6">6 Ghế</option>
+                        <option value="8">8 Ghế</option>
+                        <option value="10" selected>10 Ghế</option>
+                        <option value="12">12 Ghế</option>
+                        <option value="14">14 Ghế</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="button" id="btn-do-room-batch-create" class="batch-btn">⚡ Tạo Hàng Loạt Ghế Cho Phòng Này</button>
+            <div id="room-batch-msg" style="margin-top: 10px; font-size: 0.8rem; font-weight: 600; display: none;"></div>
+        </div>
+        {% else %}
+        <div style="margin-top: 20px; font-size: 0.8rem; color: #71717a; background: #121215; padding: 12px; border-radius: 10px; border: 1px solid #27272a;">
+            💡 Lưu thông tin Phòng chiếu trước để mở khóa công cụ Tạo ghế tự động & Sơ đồ phòng chiếu.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN: INTERACTIVE VISUAL ROOM SEAT MAP -->
+    <div class="room-diagram-card">
+        <div class="room-header-info">
+            <div class="room-title">
+                Sơ Đồ Phòng Chiếu - <span style="color: #e11d48;">{% if original %}{{ original.name }}{% else %}Phòng Mới{% endif %}</span>
+            </div>
+            <div class="room-stats-badge" id="display-room-stats">
+                {% if original %}{{ room_seats|length }} / {{ original.capacity|default:"--" }} Ghế Đã Tạo{% else %}Chưa tạo{% endif %}
+            </div>
+        </div>
+
+        <!-- Cinema Screen -->
+        <div class="screen-wrapper">
+            <div class="cinema-screen">MÀN HÌNH CHIẾU</div>
+        </div>
+
+        <!-- Seat Color Legend -->
+        <div class="seat-legend">
+            <div class="legend-item">
+                <div class="legend-dot dot-available"></div>
+                <span>Hoạt Động (Available)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot dot-unavailable"></div>
+                <span>Tạm Khóa (Unavailable)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot dot-empty"></div>
+                <span>Ô Trống (Chưa tạo)</span>
+            </div>
+        </div>
+
+        <!-- Seat Grid Canvas -->
+        <div class="seat-grid-container" id="room-seat-grid-container">
+            {% if not original %}
+                <div style="color: #71717a; text-align: center; padding: 50px;">
+                    Lưu phòng chiếu mới để xem sơ đồ phòng chiếu.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+    const roomSeatData = JSON.parse('{{ room_seats_json|escapejs|default:"[]" }}');
+    const roomId = "{% if original %}{{ original.pk }}{% endif %}";
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const gridContainer = document.getElementById('room-seat-grid-container');
+
+        if (roomId && gridContainer) {
+            const seatMap = {};
+            let availableCount = 0;
+
+            roomSeatData.forEach(s => {
+                seatMap[s.seat_number] = s;
+                if (s.is_available) availableCount++;
+            });
+
+            // Matrix: Rows A-H, Cols 1-10
+            const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+            const cols = 10;
+            let html = '';
+
+            rows.forEach(rowLetter => {
+                html += `<div class="seat-row">`;
+                html += `<div class="row-label">${rowLetter}</div>`;
+
+                for (let c = 1; c <= cols; c++) {
+                    const seatNum = `${rowLetter}${c}`;
+                    const existingSeat = seatMap[seatNum];
+
+                    let classNames = 'seat-cell ';
+                    let titleText = `Vị trí: ${seatNum}`;
+
+                    if (existingSeat) {
+                        if (existingSeat.is_available) {
+                            classNames += 'seat-available';
+                            titleText += ' - Hoạt động';
+                        } else {
+                            classNames += 'seat-unavailable';
+                            titleText += ' - Tạm khóa';
+                        }
+                    } else {
+                        classNames += 'seat-empty';
+                        titleText += ' - Chưa khởi tạo';
+                    }
+
+                    html += `<div class="${classNames}" title="${titleText}">
+                                ${seatNum}
+                             </div>`;
+                }
+
+                html += `<div class="row-label">${rowLetter}</div>`;
+                html += `</div>`;
+            });
+
+            gridContainer.innerHTML = html;
+        }
+
+        // Room Batch Creation AJAX
+        const batchBtn = document.getElementById('btn-do-room-batch-create');
+        const batchMsg = document.getElementById('room-batch-msg');
+
+        if (batchBtn && roomId) {
+            batchBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const rows = document.getElementById('batch-rows-select').value;
+                const cols = document.getElementById('batch-cols-select').value;
+                const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+                const csrfToken = csrfInput ? csrfInput.value : '';
+
+                batchBtn.disabled = true;
+                batchBtn.textContent = '⏳ Đang khởi tạo ghế...';
+                batchMsg.style.display = 'block';
+                batchMsg.style.color = '#f59e0b';
+                batchMsg.textContent = 'Đang tiến hành tạo danh sách ghế cho phòng...';
+
+                const formData = new FormData();
+                formData.append('room_id', roomId);
+                formData.append('num_rows', rows);
+                formData.append('num_cols', cols);
+                formData.append('csrfmiddlewaretoken', csrfToken);
+
+                fetch("{% url 'admin:seat_batch_create' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    batchBtn.disabled = false;
+                    batchBtn.textContent = '⚡ Tạo Hàng Loạt Ghế Cho Phòng Này';
+
+                    if (data.status === 'success') {
+                        batchMsg.style.color = '#10b981';
+                        batchMsg.textContent = data.message;
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        batchMsg.style.color = '#ef4444';
+                        batchMsg.textContent = data.message || 'Tạo ghế thất bại!';
+                    }
+                })
+                .catch(err => {
+                    batchBtn.disabled = false;
+                    batchBtn.textContent = '⚡ Tạo Hàng Loạt Ghế Cho Phòng Này';
+                    batchMsg.style.color = '#ef4444';
+                    batchMsg.textContent = 'Lỗi kết nối server: ' + err;
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
