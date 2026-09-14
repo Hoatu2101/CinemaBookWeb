@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import cookies from "react-cookies";
-import Apis, { endpoints, authApis } from "../../configs/Apis";
+import { endpoints, authApis } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/context";
 import MySpinner from "../../components/MySpinner/MySpinner";
 import "../../styles/UserProfile.css";

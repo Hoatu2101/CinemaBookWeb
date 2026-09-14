@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Container, Button, Badge, Form, Row, Col } from "react-bootstrap";
+import { Container, Button, Badge, Row, Col } from "react-bootstrap";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/context";
 import { 
@@ -18,7 +18,6 @@ const SeatMap = ({ showtimeId }) => {
     const [fbSeats, setFbSeats] = useState({});
     const [, setLoading] = useState(true);
     const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
-    const [paymentMethod, setPaymentMethod] = useState("VNPAY"); // Mặc định VNPAY Sandbox cho Developer
 
     // Loại vé động kết nối với Backend Django DB (Giá chuẩn 75.000 VNĐ)
     const [ticketTypes, setTicketTypes] = useState([

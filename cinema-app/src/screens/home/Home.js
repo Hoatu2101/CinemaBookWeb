@@ -132,12 +132,14 @@ const Home = () => {
 
     useEffect(() => {
         loadMovies();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [q, page]);
 
     useEffect(() => {
         loadCates();
         loadCinemas();
         loadFormats();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
