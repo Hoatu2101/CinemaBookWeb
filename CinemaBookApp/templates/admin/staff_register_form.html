@@ -237,7 +237,18 @@
                     <input type="text" id="number_phone" name="number_phone" class="form-control" placeholder="0901234567">
                 </div>
 
-                <div class="form-group" style="grid-column: span 1 / -1;">
+                <div class="form-group">
+                    <label for="role">Vai trò / Quyền hạn (Role) <span class="required">*</span></label>
+                    <select id="role" name="role" class="form-control" required>
+                        <option value="ROLE_STAFF">Nhân viên rạp (ROLE_STAFF - Soát vé)</option>
+                        <option value="ROLE_CINEMA_MANAGER">Quản lý rạp (ROLE_CINEMA_MANAGER - Quản lý lịch chiếu & vé)</option>
+                        {% if user.is_superuser or user.profile.role == 'ROLE_ADMIN' %}
+                            <option value="ROLE_ADMIN">Quản trị viên (ROLE_ADMIN - Toàn quyền hệ thống)</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label for="cinema_id">Rạp / Chi nhánh phụ trách <span class="required">*</span></label>
                     <select id="cinema_id" name="cinema_id" class="form-control" required>
                         {% if user.is_superuser or user.profile.role == 'ROLE_ADMIN' %}
@@ -254,7 +265,7 @@
 
             <div style="margin-top: 25px; text-align: right;">
                 <button type="submit" class="btn-submit">
-                    Tạo Tài Khoản Nhân Viên
+                    Tạo Tài Khoản
                 </button>
             </div>
         </form>
@@ -263,7 +274,7 @@
     <!-- Danh sách Nhân viên rạp hiện tại -->
     <div class="staff-table-card">
         <h3 style="margin: 0 0 15px 0; font-size: 1.15rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
-            <span>Danh Sách Nhân Viên Rạp (Mới nhất)</span>
+            <span>Danh Sách Nhân Viên & Quản Lý Rạp (Mới nhất)</span>
             <span style="font-size: 0.85rem; font-weight: 600; color: #a1a1aa;">Tổng cộng: {{ staff_profiles.count }} tài khoản</span>
         </h3>
 
@@ -274,7 +285,7 @@
                     <th>Tên đăng nhập</th>
                     <th>Email / SĐT</th>
                     <th>Rạp Phụ Trách</th>
-                    <th>Vai Trò</th>
+                    <th>Vai Trò (Role)</th>
                     <th>Ngày Tạo</th>
                 </tr>
             </thead>
@@ -294,7 +305,15 @@
                             <span style="color: #71717a;">Tất cả rạp</span>
                         {% endif %}
                     </td>
-                    <td><span class="role-badge">STAFF</span></td>
+                    <td>
+                        {% if profile.role == 'ROLE_ADMIN' %}
+                            <span class="role-badge" style="background: #dc2626;">ADMIN</span>
+                        {% elif profile.role == 'ROLE_CINEMA_MANAGER' %}
+                            <span class="role-badge" style="background: #8b5cf6;">QUẢN LÝ RẠP</span>
+                        {% else %}
+                            <span class="role-badge" style="background: #2563eb;">NHÂN VIÊN</span>
+                        {% endif %}
+                    </td>
                     <td style="color: #71717a; font-size: 0.82rem;">{{ profile.user.date_joined|date:"d/m/Y H:i" }}</td>
                 </tr>
                 {% empty %}

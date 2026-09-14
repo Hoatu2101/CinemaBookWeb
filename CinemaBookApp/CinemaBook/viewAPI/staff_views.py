@@ -212,7 +212,7 @@ def staff_verify_ticket_api(request):
                 return JsonResponse({
                     'success': False,
                     'status_type': 'EXPIRED_SHOWTIME',
-                    'message': f'❌ MÃ VÉ KHÔNG HỢP LỆ DO SUẤT CHIẾU ĐÃ KẾT THÚC! (Hết hạn lúc {end_str} ngày {date_str}).',
+                    'message': f'MÃ VÉ KHÔNG HỢP LỆ DO SUẤT CHIẾU ĐÃ KẾT THÚC! (Hết hạn lúc {end_str} ngày {date_str}).',
                     'ticket_info': ticket_data
                 }, status=400)
 
