@@ -51,6 +51,35 @@ def _ask_gemini_rest_api(api_key, prompt):
             last_err = Exception(f"Gemini REST Error {he.code}: {err_body}")
         except Exception as e:
             last_err = e
+
+    # Dynamic fallback: Query ListModels API if static model names failed
+    try:
+        list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+        req = urllib.request.Request(list_url, method='GET')
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            models_data = json.loads(resp.read().decode('utf-8'))
+            discovered = []
+            for item in models_data.get('models', []):
+                if 'generateContent' in item.get('supportedGenerationMethods', []):
+                    name = item['name'].replace('models/', '')
+                    if name not in models:
+                        discovered.append(name)
+            for m in discovered:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                headers = {"Content-Type": "application/json"}
+                payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                try:
+                    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+                    with urllib.request.urlopen(req, timeout=20) as resp:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        text = data['candidates'][0]['content']['parts'][0]['text']
+                        if text:
+                            return text
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
     if last_err:
         raise last_err
     raise ValueError("Không nhận được phản hồi từ Gemini API.")
@@ -60,16 +89,19 @@ def ask_gemini(prompt):
     api_key = get_api_key()
     last_error = None
 
+    preferred_models = [
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-pro",
+        "gemini-flash-latest",
+    ]
+
     # Tier 1: Try new google.genai SDK
     if genai is not None:
         try:
             client = genai.Client(api_key=api_key)
-            preferred_models = [
-                "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash",
-                "gemini-1.5-pro",
-            ]
             for model_name in preferred_models:
                 try:
                     response = client.models.generate_content(
@@ -87,8 +119,7 @@ def ask_gemini(prompt):
     if legacy_genai is not None:
         try:
             legacy_genai.configure(api_key=api_key)
-            legacy_models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-pro"]
-            for m in legacy_models:
+            for m in preferred_models:
                 try:
                     mod = legacy_genai.GenerativeModel(m)
                     res = mod.generate_content(prompt)
