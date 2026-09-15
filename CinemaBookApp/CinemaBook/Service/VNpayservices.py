@@ -2,8 +2,7 @@ import hashlib
 import hmac
 import os
 import urllib.parse
-from datetime import datetime, timedelta
-from django.conf import settings
+from datetime import datetime, timedelta, timezone
 
 class VNPayService:
     def __init__(self, tmn_code=None, hash_secret=None, vnp_url=None, return_url=None):
@@ -19,9 +18,12 @@ class VNPayService:
         if not ip_addr or ip_addr == '::1' or ':' in ip_addr:
             ip_addr = '127.0.0.1'
 
-        now = datetime.now()
+        # VNPAY bắt buộc thời gian theo múi giờ Việt Nam (GMT+7)
+        tz_vn = timezone(timedelta(hours=7))
+        now = datetime.now(tz_vn)
         vnp_create_date = now.strftime("%Y%m%d%H%M%S")
         vnp_expire_date = (now + timedelta(minutes=15)).strftime("%Y%m%d%H%M%S")
+
         
         # Tạo vnp_TxnRef duy nhất bằng cách đính kèm timestamp để tránh trùng lặp mã đơn trong VNPAY Sandbox
         vnp_txn_ref = f"{order_id}_{int(now.timestamp())}"
