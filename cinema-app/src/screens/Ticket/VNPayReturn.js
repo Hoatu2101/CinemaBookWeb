@@ -11,7 +11,8 @@ const VNPayReturn = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const status = queryParams.get('status');
-    const bookingId = queryParams.get('booking_id') || queryParams.get('vnp_TxnRef');
+    const rawBookingId = queryParams.get('booking_id') || queryParams.get('vnp_TxnRef');
+    const bookingId = rawBookingId ? rawBookingId.split('_')[0] : null;
     const showtimeId = queryParams.get('showtime_id');
     const rawSeatIds = queryParams.get('seat_ids');
     const isSuccess = status === 'success' || queryParams.get('vnp_ResponseCode') === '00';
@@ -29,6 +30,10 @@ const VNPayReturn = () => {
                 return;
             }
             try {
+                // Nếu VNPay trả trực tiếp về frontend, gửi thông tin phản hồi cho backend xử lý DB & Email
+                if (queryParams.has('vnp_ResponseCode')) {
+                    await authApis().get(`/payments/vnpay-return/?${location.search.substring(1)}`).catch(() => {});
+                }
                 const res = await authApis().get(`/bookings/${bookingId}/`);
                 setBookingData(res.data);
             } catch (err) {
@@ -39,7 +44,7 @@ const VNPayReturn = () => {
         };
 
         fetchBooking();
-    }, [bookingId, isSuccess]);
+    }, [bookingId, isSuccess, location.search]);
 
     // Tự động xử lý trạng thái ghế trên Firebase Realtime & Django DB khi nhận phản hồi từ VNPay
     useEffect(() => {

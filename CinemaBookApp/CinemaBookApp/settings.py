@@ -218,7 +218,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 VNPAY_TMN_CODE = os.getenv('VNPAY_TMN_CODE', 'QMOGOGN5')
 VNPAY_HASH_SECRET = os.getenv('VNPAY_HASH_SECRET', 'ARCUJSULBPRSKHSERCHGUKLCDNGXVWXC')
 VNPAY_URL = os.getenv('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html')
-VNPAY_RETURN_URL = os.getenv('VNPAY_RETURN_URL', 'http://localhost:8000/api/payments/vnpay-return/')
+VNPAY_RETURN_URL = os.getenv('VNPAY_RETURN_URL', 'https://cinema-book-web-ashen.vercel.app/vnpay-return')
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend')
@@ -228,7 +228,7 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 # Frontend URL
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3001')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://cinema-book-web-ashen.vercel.app')
 
 
 

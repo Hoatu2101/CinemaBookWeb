@@ -10,7 +10,7 @@ class VNPayService:
         self.tmn_code = tmn_code or getattr(settings, 'VNPAY_TMN_CODE', None) or os.getenv('VNPAY_TMN_CODE', 'QMOGOGN5')
         self.hash_secret = hash_secret or getattr(settings, 'VNPAY_HASH_SECRET', None) or os.getenv('VNPAY_HASH_SECRET', 'ARCUJSULBPRSKHSERCHGUKLCDNGXVWXC')
         self.vnp_url = vnp_url or getattr(settings, 'VNPAY_URL', None) or os.getenv('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html')
-        self.return_url = return_url or getattr(settings, 'VNPAY_RETURN_URL', None) or os.getenv('VNPAY_RETURN_URL', 'http://localhost:3001/vnpay-return')
+        self.return_url = return_url or getattr(settings, 'VNPAY_RETURN_URL', None) or os.getenv('VNPAY_RETURN_URL', 'https://cinema-book-web-ashen.vercel.app/vnpay-return')
 
     def get_payment_url(self, order_id, amount, order_info="Thanh toan ve xem phim CineBook", ip_addr="127.0.0.1", return_url=None):
         if not return_url:
