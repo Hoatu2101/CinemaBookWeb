@@ -15,6 +15,11 @@ def send_ticket_confirmation_email(booking):
         logger.warning("Không thể gửi email xác nhận vé: Booking hoặc User không hợp lệ.")
         return False
 
+    try:
+        booking.user.refresh_from_db()
+    except Exception:
+        pass
+
     recipient_email = getattr(booking.user, 'email', '').strip()
     if not recipient_email:
         username = booking.user.username

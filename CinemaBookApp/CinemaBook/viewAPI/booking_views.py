@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from ..models import Booking, Ticket, Showtime, SeatShowtimeStatus, TypeTicket, SeatStatus
 from ..serializers import TypeTicketSerializer, BookingSerializer, TicketSerializer
 from ..Service.VNpayservices import VNPayService
+from ..Service.email_service import send_ticket_confirmation_email
 from .staff_views import is_staff_member
 
 
@@ -178,6 +179,23 @@ class BookingViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Retr
                 ip_addr=ip_addr
             )
             return Response({'booking_id': booking.id, 'total_price': booking.total_price, 'payment_url': payment_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='resend-email')
+    def resend_email(self, request, pk=None):
+        """API Gửi lại Email xác nhận đặt vé cho đơn hàng"""
+        try:
+            booking = self.get_object()
+            if booking.payment_status != 'PAID':
+                return Response({'error': 'Chỉ có thể gửi lại email cho các đơn vé đã thanh toán thành công!'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            success = send_ticket_confirmation_email(booking)
+            if success:
+                recipient = getattr(booking.user, 'email', '')
+                return Response({'message': f'Đã gửi lại vé xem phim thành công tới email: {recipient}'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Gửi email thất bại. Vui lòng kiểm tra lại địa chỉ email trong trang cá nhân!'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

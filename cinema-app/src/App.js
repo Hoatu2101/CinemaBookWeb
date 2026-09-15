@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useReducer } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Header from "./components/Header"; 
+import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ChatWidget from "./components/ChatWidget";
 import MySpinner from "./components/MySpinner/MySpinner";
@@ -9,7 +9,7 @@ import { MyUserContext } from "./configs/context";
 import MyUserReducer from "./reducers/MyUserReducers";
 import cookies from "react-cookies";
 
-// Cơ chế lazy lòa => chỉ hiện những thứ cần thiết
+
 const Home = lazy(() => import("./screens/home/Home"));
 const MovieDetails = lazy(() => import("./screens/home/movie_detail"));
 const Login = lazy(() => import("./screens/User/Login"));
@@ -31,7 +31,7 @@ const App = () => {
           </div>
         }>
           <Routes>
-            <Route path="/" element={<Home />} /> 
+            <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

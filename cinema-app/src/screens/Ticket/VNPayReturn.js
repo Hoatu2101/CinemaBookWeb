@@ -82,6 +82,22 @@ const VNPayReturn = () => {
     const showDate = bookingData?.showtime_date || "";
     const showTime = bookingData?.showtime_time || "";
 
+    const [emailSending, setEmailSending] = useState(false);
+
+    const handleResendEmail = async () => {
+        if (!bookingId) return;
+        try {
+            setEmailSending(true);
+            const res = await authApis().post(`/bookings/${bookingId}/resend-email/`);
+            alert(res.data?.message || "Đã gửi lại vé qua email thành công!");
+        } catch (err) {
+            const msg = err.response?.data?.error || "Gửi lại email thất bại. Vui lòng kiểm tra lại email trong trang cá nhân!";
+            alert(msg);
+        } finally {
+            setEmailSending(false);
+        }
+    };
+
     return (
         <div style={{ backgroundColor: '#0d0d12', minHeight: '100vh', paddingTop: '40px', paddingBottom: '60px' }}>
             <Container className="text-white">
@@ -204,6 +220,9 @@ const VNPayReturn = () => {
                         <div className="text-center mt-5 d-flex justify-content-center gap-3 flex-wrap">
                             <Button variant="danger" size="lg" onClick={handlePrintTicket} className="fw-bold px-4 py-2" style={{ backgroundColor: '#dc2626', borderColor: '#dc2626' }}>
                                 🖨️ In / Tải Vé Về Máy (PDF)
+                            </Button>
+                            <Button variant="warning" size="lg" onClick={handleResendEmail} disabled={emailSending} className="fw-bold px-4 py-2 text-dark">
+                                {emailSending ? "⏳ Đang gửi..." : "📩 Gửi lại vé qua Email"}
                             </Button>
                             <Link to="/lich-su-dat-ve" className="btn btn-outline-light size-lg px-4 py-2 fw-bold fs-5">
                                 🎟️ Xem Tất Cả Vé Của Tôi

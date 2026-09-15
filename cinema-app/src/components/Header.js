@@ -52,6 +52,7 @@ const Header = () => {
                                 src={formatAvatarUrl(user?.avatar)} 
                                 width={40}
                                 height={40}
+                                loading="lazy"
                                 style={{ 
                                     objectFit: "cover", 
                                     border: "2px solid #e50914",
