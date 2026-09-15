@@ -8,6 +8,7 @@ const Register = () => {
     // Định nghĩa chuẩn theo tên các cột trong database của bạn
     const userInfo = [
         { field: "name", label: "Họ và tên", type: "text", placeholder: "VD: Nguyễn Văn A" },
+        { field: "email", label: "Địa chỉ Email (nhận vé xem phim)", type: "email", placeholder: "VD: emailcuaban@gmail.com" },
         { field: "number_phone", label: "Số điện thoại", type: "tel", placeholder: "090xxxxxxx" },
         { field: "username", label: "Tên đăng nhập (Username)", type: "text", placeholder: "Từ 5-20 ký tự..." },
         { field: "password", label: "Mật khẩu", type: "password", placeholder: "Tối thiểu 6 ký tự gồm chữ và số..." },
@@ -16,7 +17,8 @@ const Register = () => {
 
     const [user, setUser] = useState({
         name: "",
-        number_phone: "", // Sửa từ phone thành number_phone để khớp DB
+        email: "",
+        number_phone: "",
         username: "",
         password: "",
         confirm: ""
@@ -36,14 +38,21 @@ const Register = () => {
     const validateForm = () => {
         let newErrors = {};
         const nameRegex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠỨỪỬỮỰẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăâêôơứừửữựấẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰÝỲỶỸÝỳỷỹ\s]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const phoneRegex = /^[0-9]{10}$/;
         const usernameRegex = /^[a-zA-Z0-9]{5,20}$/;
-     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
         if (!user.name.trim()) {
             newErrors.name = "Họ và tên không được để trống";
         } else if (!nameRegex.test(user.name)) {
             newErrors.name = "Họ và tên không được chứa số hoặc ký tự đặc biệt";
+        }
+
+        if (!user.email.trim()) {
+            newErrors.email = "Email không được để trống";
+        } else if (!emailRegex.test(user.email)) {
+            newErrors.email = "Định dạng email không hợp lệ";
         }
 
         if (!user.number_phone.trim()) {
@@ -136,13 +145,13 @@ const Register = () => {
                     <div className="input-group">
                         <label>Ảnh đại diện (Avatar) - <small style={{ color: "#888" }}>Không bắt buộc</small></label>
                         <div className="file-upload-wrapper">
-                            <input 
-                                type="file" 
-                                id="file" 
-                                accept="image/*" 
+                            <input
+                                type="file"
+                                id="file"
+                                accept="image/*"
                                 ref={avatar}
-                                className="file-input-hidden" 
-                                disabled={loading} 
+                                className="file-input-hidden"
+                                disabled={loading}
                             />
                             <label htmlFor="file" className="file-upload-btn">
                                 <span>📁 Chọn ảnh từ máy tính</span>

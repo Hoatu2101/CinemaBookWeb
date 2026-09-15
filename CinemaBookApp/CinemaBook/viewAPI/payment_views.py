@@ -185,6 +185,12 @@ def vnpay_return_view(request):
     except (Booking.DoesNotExist, ValueError):
         pass
 
+    is_json_request = (
+        request.headers.get('accept') == 'application/json' or
+        request.headers.get('x-requested-with') == 'XMLHttpRequest' or
+        request.content_type == 'application/json'
+    )
+
     if is_valid and response_code == '00':
         if booking:
             booking.payment_status = 'PAID'
