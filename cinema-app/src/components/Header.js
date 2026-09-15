@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "react-bootstrap";
 import "../styles/Header.css";
 import { MyUserContext } from "../configs/context";
+import { formatAvatarUrl, DEFAULT_AVATAR } from "../configs/Apis";
 
 const Header = () => {
     const [user, dispatch] = useContext(MyUserContext);
@@ -48,7 +49,7 @@ const Header = () => {
                             title="Đến Trang cá nhân"
                         >
                             <img
-                                src={user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+                                src={formatAvatarUrl(user?.avatar)} 
                                 width={40}
                                 height={40}
                                 style={{ 
@@ -58,6 +59,10 @@ const Header = () => {
                                 }}
                                 className="rounded-circle"
                                 alt="avatar"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = DEFAULT_AVATAR;
+                                }}
                             />
 
                             <span style={{ fontWeight: "500", color: "#fff" }}>

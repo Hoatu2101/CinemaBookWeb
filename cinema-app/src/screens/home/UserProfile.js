@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import cookies from "react-cookies";
-import { endpoints, authApis } from "../../configs/Apis";
+import { endpoints, authApis, formatAvatarUrl, DEFAULT_AVATAR } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/context";
 import MySpinner from "../../components/MySpinner/MySpinner";
 import "../../styles/UserProfile.css";
@@ -218,7 +218,7 @@ const UserProfileScreen = () => {
     };
 
     const userDisplayName = user?.username || user?.name || user?.first_name || "Thành viên";
-    const userAvatarUrl = avatarPreview || user?.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    const userAvatarUrl = avatarPreview || formatAvatarUrl(user?.avatar);
     const roleLabel = user?.role === "ROLE_ADMIN" ? "Quản trị viên" : user?.role === "ROLE_STAFF" ? "Nhân viên" : "Khách hàng";
 
     return (
@@ -227,7 +227,15 @@ const UserProfileScreen = () => {
                 {/* Header Card */}
                 <div className="profile-header-card">
                     <div className="header-avatar-wrapper">
-                        <img src={userAvatarUrl} alt="Avatar" className="header-avatar-img" />
+                        <img 
+                            src={userAvatarUrl} 
+                            alt="Avatar" 
+                            className="header-avatar-img" 
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = DEFAULT_AVATAR;
+                            }}
+                        />
                         <div 
                             className="avatar-badge" 
                             title="Đổi ảnh đại diện"

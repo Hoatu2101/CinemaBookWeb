@@ -2,6 +2,15 @@ import axios from "axios";
 import cookies from "react-cookies";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api/";
+export const SERVER_URL = BASE_URL.replace(/\/api\/?$/, "");
+export const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+export const formatAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return DEFAULT_AVATAR;
+    if (avatarPath.startsWith("http://") || avatarPath.startsWith("https://")) return avatarPath;
+    const cleanPath = avatarPath.startsWith("/") ? avatarPath : `/${avatarPath}`;
+    return `${SERVER_URL}${cleanPath}`;
+};
 
 export const endpoints = {
     'movies': "/movies/",

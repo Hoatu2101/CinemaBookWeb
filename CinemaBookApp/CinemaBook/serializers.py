@@ -172,7 +172,7 @@ class GoogleLoginSerializer(serializers.Serializer):
 
 class UserAuthSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='profile.role', read_only=True)
-    avatar = serializers.ImageField(source='profile.avatar', read_only=True)
+    avatar = serializers.SerializerMethodField()
     cinema_id = serializers.IntegerField(source='profile.cinema_id', read_only=True)
     name = serializers.CharField(source='profile.name', read_only=True)
     number_phone = serializers.CharField(source='profile.number_phone', read_only=True)
@@ -180,3 +180,14 @@ class UserAuthSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'role', 'avatar', 'cinema_id', 'name', 'number_phone']
+
+    def get_avatar(self, obj):
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.avatar:
+            url = str(obj.profile.avatar.url) if hasattr(obj.profile.avatar, 'url') else str(obj.profile.avatar)
+            if url.startswith('http://') or url.startswith('https://'):
+                return url
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
