@@ -63,9 +63,11 @@ class SeatShowtimeStatusViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 if obj and obj.status == SeatStatus.BOOKED:
                     return Response({'error': f'Ghế ID {s_id} đã được đặt trước đó!'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                if obj and obj.status == SeatStatus.LOCKED and obj.user and obj.user != user and obj.lock_time:
-                    if (now - obj.lock_time).total_seconds() < 300:
-                        return Response({'error': f'Ghế ID {s_id} đang được người khác giữ chỗ trong 5 phút!'}, status=status.HTTP_400_BAD_REQUEST)
+                if obj and obj.status == SeatStatus.LOCKED and obj.lock_time:
+                    lock_owner = cache.get(f"seat_lock:{showtime_id}:{s_id}")
+                    is_different_session = lock_owner and lock_owner != client_session_id
+                    if is_different_session and (now - obj.lock_time).total_seconds() < 300:
+                        return Response({'error': f'Ghế ID {s_id} đang được giữ chỗ ở một Tab hoặc trình duyệt khác trong 5 phút!'}, status=status.HTTP_400_BAD_REQUEST)
                 
                 if not obj:
                     obj = SeatShowtimeStatus.objects.create(

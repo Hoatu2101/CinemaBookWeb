@@ -4,6 +4,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { authApis } from '../../configs/Apis';
 import { MyUserContext } from '../../configs/context';
 import { unlockSeatInFirebase, bookSeatsInFirebase } from '../../configs/firebase';
+import NotificationModal from '../../components/NotificationModal';
 import cookies from 'react-cookies';
 
 const VNPayReturn = () => {
@@ -83,16 +84,26 @@ const VNPayReturn = () => {
     const showTime = bookingData?.showtime_time || "";
 
     const [emailSending, setEmailSending] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        show: false,
+        title: "",
+        message: "",
+        variant: "info"
+    });
+
+    const showAlert = (message, title = "Thông báo CineBook", variant = "info") => {
+        setModalConfig({ show: true, title, message, variant });
+    };
 
     const handleResendEmail = async () => {
         if (!bookingId) return;
         try {
             setEmailSending(true);
             const res = await authApis().post(`/bookings/${bookingId}/resend-email/`);
-            alert(res.data?.message || "Đã gửi lại vé qua email thành công!");
+            showAlert(res.data?.message || "Đã gửi lại vé qua email thành công!", "Gửi vé thành công", "success");
         } catch (err) {
             const msg = err.response?.data?.error || "Gửi lại email thất bại. Vui lòng kiểm tra lại email trong trang cá nhân!";
-            alert(msg);
+            showAlert(msg, "Gửi email thất bại", "danger");
         } finally {
             setEmailSending(false);
         }
@@ -257,6 +268,14 @@ const VNPayReturn = () => {
                         </Card.Body>
                     </Card>
                 )}
+
+                <NotificationModal 
+                    show={modalConfig.show} 
+                    onHide={() => setModalConfig((prev) => ({ ...prev, show: false }))} 
+                    title={modalConfig.title} 
+                    message={modalConfig.message} 
+                    variant={modalConfig.variant} 
+                />
             </Container>
         </div>
     );

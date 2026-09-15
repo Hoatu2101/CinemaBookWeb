@@ -10,6 +10,7 @@ import {
     bookSeatsInFirebase, 
     listenShowtimeSeats 
 } from "../../configs/firebase";
+import NotificationModal from "../../components/NotificationModal";
 import "../../styles/SeatMap.css";
 import cookies from "react-cookies";
 
@@ -27,6 +28,33 @@ const SeatMap = ({ showtimeId }) => {
     const [fbSeats, setFbSeats] = useState({});
     const [loading, setLoading] = useState(true);
     const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
+
+    // Notification Pop-up Modal state
+    const [modalConfig, setModalConfig] = useState({
+        show: false,
+        title: "",
+        message: "",
+        variant: "danger",
+        onConfirm: null
+    });
+
+    const showAlert = (message, title = "Thông báo CineBook", variant = "danger", onConfirm = null) => {
+        setModalConfig({
+            show: true,
+            title,
+            message,
+            variant,
+            onConfirm
+        });
+    };
+
+    const handleCloseModal = () => {
+        const callback = modalConfig.onConfirm;
+        setModalConfig((prev) => ({ ...prev, show: false, onConfirm: null }));
+        if (callback) {
+            callback();
+        }
+    };
 
     // Loại vé động kết nối với Backend Django DB (Giá chuẩn 75.000 VNĐ)
     const [ticketTypes, setTicketTypes] = useState([
@@ -52,7 +80,12 @@ const SeatMap = ({ showtimeId }) => {
         clientSessionId = "sess_" + Math.random().toString(36).substring(2, 9) + "_" + Date.now();
         sessionStorage.setItem("client_session_id", clientSessionId);
     }
-    const myLockUserId = currentUser?.id ? `user_${currentUser.id}` : ((currentUser?.username && currentUser.username !== "khachhang") ? `user_${currentUser.username}` : clientSessionId);
+    // Đảm bảo mỗi Tab trình duyệt có một myLockUserId duy nhất để không bị đè/giữ chéo giữa 2 Tab cùng tài khoản
+    const myLockUserId = currentUser?.id 
+        ? `user_${currentUser.id}_${clientSessionId}` 
+        : ((currentUser?.username && currentUser.username !== "khachhang") 
+            ? `user_${currentUser.username}_${clientSessionId}` 
+            : clientSessionId);
     const lockUserObject = { ...currentUser, lock_user_id: myLockUserId };
 
     // Tải danh sách Loại Vé thực tế từ Backend Django
@@ -167,7 +200,7 @@ const SeatMap = ({ showtimeId }) => {
                     });
                     authApis().post("/seat-statuses/unlock_seats/", { showtime_id: validId, seat_ids: expiredSeatIds }).catch(() => {});
                     setSelectedSeats([]);
-                    alert("Đã hết 5 phút giữ ghế! Ghế của bạn đã được tự động giải phóng về trạng thái ban đầu.");
+                    showAlert("Đã hết 5 phút giữ ghế! Ghế của bạn đã được tự động giải phóng về trạng thái ban đầu.", "Hết giờ giữ ghế", "warning");
                     return 300;
                 }
                 return prev - 1;
@@ -203,7 +236,7 @@ const SeatMap = ({ showtimeId }) => {
     // Tăng số lượng vé theo loại
     const handleAddTicket = (typeId) => {
         if (totalTicketsCount >= 8) {
-            alert("Bạn chỉ được đặt tối đa 8 vé cho mỗi lần giao dịch!");
+            showAlert("Bạn chỉ được đặt tối đa 8 vé cho mỗi lần giao dịch!", "Giới hạn số lượng vé", "warning");
             return;
         }
         setTicketCounts((prev) => ({
@@ -222,7 +255,7 @@ const SeatMap = ({ showtimeId }) => {
         const newTotal = Object.values(newCounts).reduce((a, b) => a + b, 0);
 
         if (newTotal === 0) {
-            alert("Số lượng vé tổng cộng phải ít nhất là 1 vé!");
+            showAlert("Số lượng vé tổng cộng phải ít nhất là 1 vé!", "Số lượng không hợp lệ", "warning");
             return;
         }
 
@@ -242,7 +275,7 @@ const SeatMap = ({ showtimeId }) => {
 
         const isBooked = seat.status === "BOOKED" || seat.status === "SOLD" || fbSeat?.status === "BOOKED";
         if (isBooked) {
-            alert("Ghế này đã được khách hàng khác đặt mua!");
+            showAlert("Ghế này đã được khách hàng khác đặt mua thành công!", "Ghế đã bán", "danger");
             return;
         }
 
@@ -251,7 +284,7 @@ const SeatMap = ({ showtimeId }) => {
             (seat.status === "LOCKED" && !isAlreadySelected);
 
         if (isLockedByOthers) {
-            alert("Ghế này đang được người khác giữ chỗ trong 5 phút! Vui lòng chọn ghế khác.");
+            showAlert("Ghế này đang được người khác (hoặc Tab khác) giữ chỗ trong 5 phút! Vui lòng chọn ghế khác.", "Ghế đang bị giữ", "warning");
             return;
         }
 
@@ -269,7 +302,7 @@ const SeatMap = ({ showtimeId }) => {
                 setTicketCounts((prev) => ({ ...prev, [defaultKey]: 1 }));
                 currentTotal = 1;
             } else if (selectedSeats.length >= currentTotal) {
-                alert(`Bạn đã chọn đủ ${currentTotal} ghế tương ứng với ${currentTotal} vé! Hãy tăng số lượng vé ở bảng trên nếu muốn chọn thêm ghế.`);
+                showAlert(`Bạn đã chọn đủ ${currentTotal} ghế tương ứng với ${currentTotal} vé! Hãy tăng số lượng vé ở bảng trên nếu muốn chọn thêm ghế.`, "Đã chọn đủ ghế", "info");
                 return;
             }
 
@@ -320,18 +353,18 @@ const SeatMap = ({ showtimeId }) => {
     // Xử lý Thanh Toán VNPay Sandbox hoặc Tiền Mặt
     const handleCheckout = async () => {
         if (selectedSeats.length === 0) {
-            alert("Vui lòng chọn ghế trên sơ đồ!");
+            showAlert("Vui lòng chọn ghế trên sơ đồ!", "Chưa chọn ghế", "warning");
             return;
         }
 
         if (selectedSeats.length < totalTicketsCount) {
-            alert(`Bạn đã đăng ký ${totalTicketsCount} vé nhưng mới chọn ${selectedSeats.length} ghế. Vui lòng chọn đủ ${totalTicketsCount} ghế trên sơ đồ trước khi thanh toán!`);
+            showAlert(`Bạn đã đăng ký ${totalTicketsCount} vé nhưng mới chọn ${selectedSeats.length} ghế. Vui lòng chọn đủ ${totalTicketsCount} ghế trên sơ đồ trước khi thanh toán!`, "Chưa chọn đủ ghế", "warning");
             return;
         }
 
         const token = cookies.load("token");
         if (!token) {
-            alert("Vui lòng đăng nhập để tiếp tục đặt vé!");
+            showAlert("Vui lòng đăng nhập để tiếp tục đặt vé!", "Yêu cầu đăng nhập", "warning", () => navigate(`/login?next=${encodeURIComponent(location.pathname)}`));
             return;
         }
 
@@ -365,12 +398,12 @@ const SeatMap = ({ showtimeId }) => {
                     }
                 } catch (vnpErr) {
                     console.error("Lỗi khởi tạo cổng VNPay:", vnpErr);
-                    alert("Không thể khởi tạo cổng thanh toán VNPay: " + (vnpErr.response?.data?.error || vnpErr.message));
+                    showAlert("Không thể khởi tạo cổng thanh toán VNPay: " + (vnpErr.response?.data?.error || vnpErr.message), "Lỗi thanh toán", "danger");
                     return;
                 }
 
                 await bookSeatsInFirebase(validId, seatIds, lockUserObject);
-                alert(`Đặt vé thành công! Mã đơn vé của bạn là: #${orderId}`);
+                showAlert(`Đặt vé thành công! Mã đơn vé của bạn là: #${orderId}`, "Đặt vé thành công", "success");
                 setSelectedSeats([]);
 
                 const seatEndpoint = endpoints.seats ? endpoints.seats(validId) : `/showtimes/${validId}/seats/`;
@@ -383,7 +416,7 @@ const SeatMap = ({ showtimeId }) => {
             if (err.response) {
                 const status = err.response.status;
                 if (status === 401 || status === 403 || status === 302) {
-                    alert("Tài khoản chưa được xác thực hoặc phiên đăng nhập đã hết hạn!");
+                    showAlert("Tài khoản chưa được xác thực hoặc phiên đăng nhập đã hết hạn!", "Phiên hết hạn", "warning", () => navigate(`/login?next=${encodeURIComponent(location.pathname)}`));
                 } else if (status === 400) {
                     const data = err.response.data;
                     let errorMsg = "Dữ liệu đặt vé không hợp lệ.";
@@ -392,12 +425,12 @@ const SeatMap = ({ showtimeId }) => {
                     } else if (data && typeof data === 'object') {
                         errorMsg = data.error || data.message || data.detail || Object.values(data).flat().join(", ");
                     }
-                    alert("Lỗi đặt vé: " + errorMsg);
+                    showAlert("Lỗi đặt vé: " + errorMsg, "Không thể đặt vé", "danger");
                 } else {
-                    alert("Hệ thống đang bận hoặc gặp sự cố, xin thử lại sau.");
+                    showAlert("Hệ thống đang bận hoặc gặp sự cố, xin thử lại sau.", "Lỗi hệ thống", "danger");
                 }
             } else {
-                alert("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng!");
+                showAlert("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng!", "Lỗi kết nối", "danger");
             }
         }
     };
@@ -629,6 +662,15 @@ const SeatMap = ({ showtimeId }) => {
                     </Row>
                 </div>
             )}
+
+            {/* Component Pop-up Thông báo Tùy chỉnh */}
+            <NotificationModal 
+                show={modalConfig.show} 
+                onHide={handleCloseModal} 
+                title={modalConfig.title} 
+                message={modalConfig.message} 
+                variant={modalConfig.variant} 
+            />
         </Container>
     );
 };

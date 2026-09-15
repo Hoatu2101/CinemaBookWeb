@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import cookies from "react-cookies";
 import { MyUserContext } from "../../configs/context";
 import Apis, { endpoints } from "../../configs/Apis";
+import NotificationModal from "../../components/NotificationModal";
 import "../../styles/movie.css";
 
 const getLocalDateStr = (d = new Date()) => {
@@ -43,6 +44,24 @@ const ShowtimeList = ({ movieId, onSelectShowtime }) => {
     const [selectedId, setSelectedId] = useState(null);
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const [hidePast, setHidePast] = useState(true);
+
+    const [modalConfig, setModalConfig] = useState({
+        show: false,
+        title: "",
+        message: "",
+        variant: "warning",
+        onConfirm: null
+    });
+
+    const showAlert = (message, title = "Thông báo CineBook", variant = "warning", onConfirm = null) => {
+        setModalConfig({ show: true, title, message, variant, onConfirm });
+    };
+
+    const handleCloseModal = () => {
+        const callback = modalConfig.onConfirm;
+        setModalConfig((prev) => ({ ...prev, show: false, onConfirm: null }));
+        if (callback) callback();
+    };
 
     const getUpcomingDays = (count = 7) => {
         const days = [];
@@ -130,15 +149,16 @@ const ShowtimeList = ({ movieId, onSelectShowtime }) => {
 
     const handleSelect = (st) => {
         if (isShowtimePast(st)) {
-            alert("Suất chiếu này đã qua thời gian khởi chiếu!");
+            showAlert("Suất chiếu này đã qua thời gian khởi chiếu!", "Suất chiếu đã qua", "warning");
             return;
         }
 
         const token = cookies.load("token");
         const currentUser = user || cookies.load("user");
         if (!currentUser || !token) {
-            alert("Vui lòng đăng nhập tài khoản để chọn suất chiếu và đặt vé!");
-            navigate(`/login?next=${encodeURIComponent(location.pathname)}`);
+            showAlert("Vui lòng đăng nhập tài khoản để chọn suất chiếu và đặt vé!", "Yêu cầu đăng nhập", "warning", () => {
+                navigate(`/login?next=${encodeURIComponent(location.pathname)}`);
+            });
             return;
         }
 
@@ -150,7 +170,7 @@ const ShowtimeList = ({ movieId, onSelectShowtime }) => {
 
     const handleDateChange = (dateVal) => {
         if (dateVal < todayStr) {
-            alert("Không thể chọn ngày trong quá khứ!");
+            showAlert("Không thể chọn ngày trong quá khứ!", "Ngày không hợp lệ", "warning");
             return;
         }
         setSelectedDate(dateVal);
@@ -260,6 +280,14 @@ const ShowtimeList = ({ movieId, onSelectShowtime }) => {
                     <span>Chưa có suất chiếu khả dụng cho ngày <b>{selectedDate}</b>{hidePast ? " (hoặc các suất chiếu trong ngày đã trôi qua)" : ""}. Vui lòng chọn ngày khác!</span>
                 </div>
             )}
+
+            <NotificationModal 
+                show={modalConfig.show} 
+                onHide={handleCloseModal} 
+                title={modalConfig.title} 
+                message={modalConfig.message} 
+                variant={modalConfig.variant} 
+            />
         </div>
     );
 };
