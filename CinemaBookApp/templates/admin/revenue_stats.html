@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n static %}
+{% load i18n static format_tags %}
 
 {% block title %}Thống kê doanh thu | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
@@ -31,69 +31,87 @@
 
     .stats-title p {
         color: #a1a1aa !important;
-        margin: 0;
+        margin: 0 !important;
+        font-size: 0.9rem !important;
     }
 
-    /* Filter Bar */
-    .filter-bar {
+    .filter-card {
         background: #18181b;
         border: 1px solid #27272a;
         border-radius: 16px;
         padding: 20px;
-        margin-bottom: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .filter-grid {
         display: flex;
         flex-wrap: wrap;
         gap: 16px;
         align-items: center;
     }
 
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 160px;
+    }
+
+    .filter-group label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #a1a1aa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-group select {
+        background: #27272a;
+        color: #ffffff;
+        border: 1px solid #3f3f46;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .filter-group select:focus {
+        border-color: #e11d48;
+    }
+
     .period-tabs {
         display: flex;
-        gap: 8px;
-        background: #09090b;
+        background: #27272a;
+        border-radius: 10px;
         padding: 4px;
-        border-radius: 12px;
-        border: 1px solid #27272a;
+        border: 1px solid #3f3f46;
     }
 
     .period-tab {
         padding: 8px 16px;
         border-radius: 8px;
-        color: #a1a1aa !important;
-        font-weight: 600;
-        font-size: 0.875rem;
+        color: #a1a1aa;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-decoration: none;
         transition: all 0.2s;
-        text-decoration: none !important;
-    }
-
-    .period-tab:hover {
-        color: #ffffff !important;
     }
 
     .period-tab.active {
-        background: #e11d48 !important;
-        color: #ffffff !important;
-        box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
+        background: #e11d48;
+        color: #ffffff;
+        box-shadow: 0 2px 10px rgba(225, 29, 72, 0.4);
     }
 
-    .filter-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .filter-group label {
-        color: #a1a1aa;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    /* Summary Stat Cards */
+    /* Metric Cards */
     .summary-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 16px;
-        margin-bottom: 28px;
+        margin-bottom: 24px;
     }
 
     .summary-card {
@@ -101,93 +119,90 @@
         border: 1px solid #27272a;
         border-radius: 16px;
         padding: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+        border-color: #3f3f46;
     }
 
     .summary-card .label {
-        font-size: 0.8rem;
-        font-weight: 700;
+        font-size: 0.85rem;
         color: #a1a1aa;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
+        font-weight: 600;
     }
 
     .summary-card .value {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 800;
         color: #ffffff;
     }
 
     .summary-card .value.highlight {
-        color: #e11d48;
+        color: #fb7185;
     }
 
-    /* Chart Container */
+    /* Graph Container */
     .chart-container {
         background: #18181b;
         border: 1px solid #27272a;
         border-radius: 16px;
         padding: 24px;
-        margin-bottom: 28px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .chart-container h2 {
-        font-size: 1.1rem !important;
+        font-size: 1.2rem !important;
         font-weight: 700 !important;
         color: #ffffff !important;
         margin: 0 0 20px 0 !important;
-        background: transparent !important;
-        border-bottom: none !important;
-        padding: 0 !important;
     }
 
-    /* Data Table */
+    /* Table Container */
     .table-container {
         background: #18181b;
         border: 1px solid #27272a;
         border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        overflow-x: auto;
     }
 
     .table-container h2 {
-        font-size: 1.1rem !important;
+        font-size: 1.2rem !important;
         font-weight: 700 !important;
         color: #ffffff !important;
-        background: #121215 !important;
-        padding: 16px 24px !important;
-        margin: 0 !important;
-        border-bottom: 1px solid #27272a !important;
+        margin: 0 0 16px 0 !important;
     }
 
     .data-table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
+        border-collapse: collapse;
+        color: #e4e4e7;
     }
 
     .data-table th {
-        background: #121215;
-        color: #a1a1aa;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        padding: 14px 24px;
+        background: #27272a;
+        padding: 14px 16px;
         text-align: left;
-        border-bottom: 1px solid #27272a;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #a1a1aa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #3f3f46;
     }
 
     .data-table td {
-        padding: 14px 24px;
-        color: #ffffff;
-        font-size: 0.9rem;
+        padding: 14px 16px;
         border-bottom: 1px solid #27272a;
-    }
-
-    .data-table tr:last-child td {
-        border-bottom: none;
+        font-size: 0.95rem;
     }
 
     .data-table tr:hover td {
@@ -198,84 +213,74 @@
         font-weight: 700;
         color: #4ade80;
     }
+
+    .badge-cinema {
+        background: rgba(139, 92, 246, 0.2);
+        color: #c084fc;
+        border: 1px solid rgba(192, 132, 252, 0.3);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="content-main">
+<div style="padding: 20px 0;">
     <div class="stats-header">
         <div class="stats-title">
-            <h1>
-                📊 Thống kê doanh thu CinemaBook
-                {% if user_cinema %}
-                <span
-                    style="background: rgba(192, 132, 252, 0.18); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); padding: 4px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; vertical-align: middle;">
-                    📍 {{ user_cinema.name }}
-                </span>
-                {% endif %}
-            </h1>
+            <h1>📊 Thống Kê & Báo Cáo Doanh Thu</h1>
             <p>
                 {% if user_cinema %}
-                Báo cáo doanh thu chi tiết thuộc chi nhánh rạp <strong>{{ user_cinema.name }}</strong> ({{
-                user_cinema.location }}).
+                Phạm vi: Rạp <strong>{{ user_cinema.name }}</strong>
                 {% else %}
-                Báo cáo tổng hợp doanh thu toàn hệ thống cụm rạp CinemaBook.
+                Phạm vi: <strong>Toàn bộ hệ thống rạp (Super Admin)</strong>
                 {% endif %}
             </p>
         </div>
+
+        <div class="period-tabs">
+            <a href="?period=day{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}{% if selected_movie_id %}&movie_id={{ selected_movie_id }}{% endif %}{% if selected_cinema_id %}&cinema_id={{ selected_cinema_id }}{% endif %}"
+                class="period-tab {% if period == 'day' %}active{% endif %}">Theo Ngày</a>
+            <a href="?period=month{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_movie_id %}&movie_id={{ selected_movie_id }}{% endif %}{% if selected_cinema_id %}&cinema_id={{ selected_cinema_id }}{% endif %}"
+                class="period-tab {% if period == 'month' %}active{% endif %}">Theo Tháng</a>
+            <a href="?period=quarter{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_movie_id %}&movie_id={{ selected_movie_id }}{% endif %}{% if selected_cinema_id %}&cinema_id={{ selected_cinema_id }}{% endif %}"
+                class="period-tab {% if period == 'quarter' %}active{% endif %}">Theo Quý</a>
+            <a href="?period=year{% if selected_movie_id %}&movie_id={{ selected_movie_id }}{% endif %}{% if selected_cinema_id %}&cinema_id={{ selected_cinema_id }}{% endif %}"
+                class="period-tab {% if period == 'year' %}active{% endif %}">Theo Năm</a>
+        </div>
     </div>
 
-    <!-- Filter Bar -->
-    <form method="get" action="" id="filter-form">
-        <div class="filter-bar">
-            <!-- Period Tabs -->
-            <div class="period-tabs">
-                <a href="?period=day&year={{ selected_year }}&month={{ selected_month }}&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
-                    class="period-tab {% if period == 'day' %}active{% endif %}">Theo Ngày</a>
-                <a href="?period=month&year={{ selected_year }}&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
-                    class="period-tab {% if period == 'month' %}active{% endif %}">Theo Tháng</a>
-                <a href="?period=quarter&year={{ selected_year }}&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
-                    class="period-tab {% if period == 'quarter' %}active{% endif %}">Theo Quý</a>
-                <a href="?period=year&movie_id={{ selected_movie_id }}&cinema_id={{ selected_cinema_id }}"
-                    class="period-tab {% if period == 'year' %}active{% endif %}">Theo Năm</a>
-            </div>
+    <!-- Filter Form -->
+    <form method="get" id="filter-form" class="filter-card">
+        <input type="hidden" name="period" value="{{ period }}">
+        <div class="filter-grid">
 
-            <input type="hidden" name="period" value="{{ period }}">
-
-            <!-- Cinema Filter Dropdown (Chỉ dành cho Superadmin hoặc cố định cho Admin Nhánh) -->
+            {% if is_super_admin %}
             <div class="filter-group">
-                <label for="cinema_id">Cụm Rạp:</label>
-                {% if not is_super_admin and user_cinema %}
-                <span
-                    style="background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">
-                    📍 {{ user_cinema.name }} (Rạp phụ trách)
-                </span>
-                {% else %}
+                <label for="cinema_id">Lọc Theo Rạp</label>
                 <select name="cinema_id" id="cinema_id" onchange="document.getElementById('filter-form').submit();">
-                    <option value="">-- Tất cả cụm rạp --</option>
-                    {% for cinema in all_cinemas %}
-                    <option value="{{ cinema.id }}" {% if cinema.id == selected_cinema_id %}selected{% endif %}>{{ cinema.name }}{% if cinema.location %} ({{ cinema.location }}){% endif %}</option>
-                    {% endfor %}
-                </select>
-                {% endif %}
-            </div>
-
-            <!-- Year Dropdown -->
-            {% if period != 'year' %}
-            <div class="filter-group">
-                <label for="year">Năm:</label>
-                <select name="year" id="year" onchange="document.getElementById('filter-form').submit();">
-                    {% for y in available_years %}
-                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    <option value="">-- Tất cả rạp chiếu --</option>
+                    {% for cin in all_cinemas %}
+                    <option value="{{ cin.id }}" {% if cin.id == selected_cinema_id %}selected{% endif %}>{{ cin.name }}</option>
                     {% endfor %}
                 </select>
             </div>
             {% endif %}
 
-            <!-- Month Dropdown (For Day Period) -->
+            <div class="filter-group">
+                <label for="year">Chọn Năm</label>
+                <select name="year" id="year" onchange="document.getElementById('filter-form').submit();">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>Năm {{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             {% if period == 'day' %}
             <div class="filter-group">
-                <label for="month">Tháng:</label>
+                <label for="month">Chọn Tháng</label>
                 <select name="month" id="month" onchange="document.getElementById('filter-form').submit();">
                     {% for m in available_months %}
                     <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>Tháng {{ m }}</option>
@@ -284,14 +289,12 @@
             </div>
             {% endif %}
 
-            <!-- Movie Filter Dropdown -->
-            <div class="filter-group">
-                <label for="movie_id">Phim:</label>
+            <div class="filter-group" style="flex-grow: 1; max-width: 320px;">
+                <label for="movie_id">Lọc Theo Phim</label>
                 <select name="movie_id" id="movie_id" onchange="document.getElementById('filter-form').submit();">
                     <option value="">-- Tất cả phim --</option>
                     {% for movie in movies %}
-                    <option value="{{ movie.id }}" {% if movie.id == selected_movie_id %}selected{% endif %}>{{
-                        movie.movie_name }}</option>
+                    <option value="{{ movie.id }}" {% if movie.id == selected_movie_id %}selected{% endif %}>{{ movie.movie_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -302,23 +305,23 @@
     <div class="summary-grid">
         <div class="summary-card">
             <div class="label">Hôm nay</div>
-            <div class="value highlight">{{ today_revenue|floatformat:0 }} VNĐ</div>
+            <div class="value highlight">{{ today_revenue|intdot }} VNĐ</div>
         </div>
         <div class="summary-card">
             <div class="label">Tháng này</div>
-            <div class="value">{{ this_month_revenue|floatformat:0 }} VNĐ</div>
+            <div class="value">{{ this_month_revenue|intdot }} VNĐ</div>
         </div>
         <div class="summary-card">
             <div class="label">Quý này</div>
-            <div class="value">{{ this_quarter_revenue|floatformat:0 }} VNĐ</div>
+            <div class="value">{{ this_quarter_revenue|intdot }} VNĐ</div>
         </div>
         <div class="summary-card">
             <div class="label">Năm nay</div>
-            <div class="value">{{ this_year_revenue|floatformat:0 }} VNĐ</div>
+            <div class="value">{{ this_year_revenue|intdot }} VNĐ</div>
         </div>
         <div class="summary-card">
             <div class="label">Tổng tất cả</div>
-            <div class="value">{{ overall_revenue|floatformat:0 }} VNĐ</div>
+            <div class="value">{{ overall_revenue|intdot }} VNĐ</div>
         </div>
     </div>
 
@@ -381,7 +384,7 @@
                 <tr>
                     <td><strong>{{ row.label }}</strong></td>
                     <td>{{ row.count }} đơn</td>
-                    <td style="text-align: right;" class="revenue-amount">{{ row.revenue|floatformat:0 }} VNĐ</td>
+                    <td style="text-align: right;" class="revenue-amount">{{ row.revenue|intdot }} VNĐ</td>
                     <td style="text-align: center;">
                         <a href="/admin/CinemaBook/booking/" style="background: linear-gradient(135deg, #e11d48, #be123c); color: #ffffff; padding: 5px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);">
                             Xem chi tiết đơn vé

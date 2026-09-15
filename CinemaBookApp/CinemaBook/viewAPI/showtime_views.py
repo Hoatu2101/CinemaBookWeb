@@ -3,7 +3,7 @@ from rest_framework import status, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from ..models import Showtime, Seat, SeatShowtimeStatus, Ticket, SeatStatus
+from ..models import Showtime, Seat, SeatShowtimeStatus, Ticket, SeatStatus, Booking
 from ..serializers import ShowtimeSerializer
 
 
@@ -30,20 +30,33 @@ class ShowtimeViewSet(viewsets.ReadOnlyModelViewSet):
         showtime = self.get_object()
         room_seats = Seat.objects.filter(room=showtime.room)
 
-        # Giải phóng ghế giữ quá 5 phút (300s)
+        # 1. Giải phóng ngay các ghế giữ tạm nếu người dùng thoát trang hoặc quá 2 phút (120s)
         SeatShowtimeStatus.objects.filter(
             showtime=showtime,
             status=SeatStatus.LOCKED,
-            lock_time__lt=timezone.now() - timezone.timedelta(seconds=300)
+            lock_time__lt=timezone.now() - timezone.timedelta(seconds=120)
         ).delete()
 
-        status_objs = {sss.seat_id: sss for sss in SeatShowtimeStatus.objects.filter(showtime=showtime)}
+        # 2. Hủy hoàn toàn các đơn hàng PENDING thoát giữa chừng (> 120s) và trả lại ghế FREE
+        expired_bookings = Booking.objects.filter(
+            showtime=showtime,
+            payment_status='PENDING',
+            created_at__lt=timezone.now() - timezone.timedelta(seconds=120)
+        )
+        for eb in expired_bookings:
+            eb.payment_status = 'CANCELLED'
+            eb.save()
+            SeatShowtimeStatus.objects.filter(showtime=showtime, seat__in=[t.seat for t in eb.tickets.all()]).delete()
+
+        # 3. Chỉ ghế từ đơn vé đã THANH TOÁN THÀNH CÔNG (PAID/COMPLETED) mới được coi là BOOKED vĩnh viễn
         booked_ticket_seat_ids = set(
             Ticket.objects.filter(
                 booking__showtime=showtime,
-                booking__payment_status__in=['PAID', 'PENDING', 'COMPLETED']
+                booking__payment_status__in=['PAID', 'COMPLETED']
             ).values_list('seat_id', flat=True)
         )
+
+        status_objs = {sss.seat_id: sss for sss in SeatShowtimeStatus.objects.filter(showtime=showtime)}
 
         user = request.user if request.user.is_authenticated else None
         result = []

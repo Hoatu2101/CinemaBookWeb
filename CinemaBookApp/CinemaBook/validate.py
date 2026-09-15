@@ -25,6 +25,25 @@ def validate_showtime(obj):
     except ObjectDoesNotExist:
         movie = None
 
+    # 1. Ràng buộc & Tự động tính thời lượng suất chiếu khớp với thời lượng phim (movie.duration)
+    if movie and movie.duration and obj.start_time:
+        import datetime
+        dummy_date = datetime.date(2000, 1, 1)
+        dt_start = datetime.datetime.combine(dummy_date, obj.start_time)
+
+        if not obj.end_time:
+            dt_end = dt_start + datetime.timedelta(minutes=movie.duration)
+            obj.end_time = dt_end.time()
+        else:
+            dt_end = datetime.datetime.combine(dummy_date, obj.end_time)
+            if dt_end <= dt_start:
+                dt_end += datetime.timedelta(days=1)
+            actual_duration = int((dt_end - dt_start).total_seconds() / 60)
+            if actual_duration != movie.duration:
+                raise ValidationError(
+                    f"Độ dài suất chiếu ({actual_duration} phút) phải khớp với đúng thời lượng của bộ phim '{movie.movie_name}' ({movie.duration} phút)."
+                )
+
     if room and obj.show_date and obj.start_time and obj.end_time:
         overlapping_showtimes = Showtime.objects.filter(
             room=room,
@@ -40,32 +59,10 @@ def validate_showtime(obj):
                 "Suất chiếu này trùng với một suất chiếu khác trong cùng phòng và ngày."
             )
 
-    if movie and obj.show_date and obj.start_time and obj.end_time:
-        overlapping_showtimes = Showtime.objects.filter(
-            movie=movie,
-            show_date=obj.show_date,
-            start_time__lt=obj.end_time,
-            end_time__gt=obj.start_time
-        )
-        if obj.pk:
-            overlapping_showtimes = overlapping_showtimes.exclude(pk=obj.pk)
-
-        if overlapping_showtimes.exists():
-            raise ValidationError(
-                "Suất chiếu này trùng với một suất chiếu khác của cùng phim trong cùng ngày."
-            )
-
     if room and room.status and room.status.name not in ["Available", "Hoạt động", "Đang hoạt động"]:
         raise ValidationError(
             "Phòng chiếu hiện không khả dụng. Vui lòng chọn phòng khác."
         )
-
-    if hasattr(obj, 'duration') and obj.duration and obj.start_time and obj.end_time:
-        expected_duration = (obj.end_time - obj.start_time).total_seconds() / 60
-        if expected_duration != obj.duration:
-            raise ValidationError(
-                "Thời lượng phim không khớp với thời gian bắt đầu và kết thúc."
-            )
 
 
 def check_showtime_has_sold_seats(obj):

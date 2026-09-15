@@ -77,8 +77,8 @@ def revenue_stats_view(request):
     this_year_revenue = calc_sum(base_qs.filter(created_at__year=now.year))
     overall_revenue = calc_sum(base_qs)
 
-    years_qs = Booking.objects.dates('created_at', 'year')
-    available_years = sorted(list({d.year for d in years_qs} | {now.year}), reverse=True)
+    years_qs = Booking.objects.filter(created_at__isnull=False).dates('created_at', 'year')
+    available_years = sorted(list({d.year for d in years_qs if d and hasattr(d, 'year')} | {now.year}), reverse=True)
     movies = Movie.objects.all()
     all_cinemas = Cinema.objects.all() if is_super_admin else ([user_cinema] if user_cinema else [])
 
@@ -202,6 +202,15 @@ def vnpay_return_view(request):
 
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3001')
         return HttpResponseRedirect(f"{frontend_url}/vnpay-return?status=success&booking_id={order_id}&showtime_id={showtime_id}&seat_ids={','.join(seat_ids)}")
+
+    # Giao dịch thất bại hoặc bị hủy trên VNPay -> Hủy đơn vé & Giải phóng toàn bộ ghế về hiện trạng ban đầu (FREE)
+    if booking:
+        booking.payment_status = 'CANCELLED'
+        booking.save()
+        for t in booking.tickets.all():
+            SeatShowtimeStatus.objects.filter(
+                showtime=booking.showtime, seat=t.seat
+            ).update(status=SeatStatus.FREE, user=None)
 
     frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3001')
     return HttpResponseRedirect(f"{frontend_url}/vnpay-return?status=failed&booking_id={order_id}&showtime_id={showtime_id}&seat_ids={','.join(seat_ids)}")

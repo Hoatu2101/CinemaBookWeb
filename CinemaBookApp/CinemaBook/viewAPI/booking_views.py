@@ -90,11 +90,25 @@ class BookingViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Retr
 
                     existing_status = locked_statuses.get(s_id)
                     is_booked = existing_status and existing_status.status == SeatStatus.BOOKED
-                    existing_ticket = Ticket.objects.filter(
-                        booking__showtime=showtime, seat_id=s_id, booking__payment_status__in=['PAID', 'PENDING', 'COMPLETED']
+
+                    # 1. Kiểm tra ghế đã thanh toán thành công
+                    paid_ticket = Ticket.objects.filter(
+                        booking__showtime=showtime, seat_id=s_id, booking__payment_status__in=['PAID', 'COMPLETED']
                     ).first()
-                    if is_booked or existing_ticket:
-                        return Response({'error': f'Ghế ID {s_id} đã được người khác đặt trước cho suất chiếu này!'}, status=status.HTTP_400_BAD_REQUEST)
+                    if is_booked or paid_ticket:
+                        return Response({'error': f'Ghế ID {s_id} đã được người khác thanh toán mua vé thành công!'}, status=status.HTTP_400_BAD_REQUEST)
+
+                    # 2. Kiểm tra ghế đang trong quá trình thanh toán PENDING (dưới 5 phút)
+                    pending_ticket = Ticket.objects.filter(
+                        booking__showtime=showtime, seat_id=s_id, booking__payment_status='PENDING'
+                    ).first()
+                    if pending_ticket:
+                        if pending_ticket.booking.created_at and (timezone.now() - pending_ticket.booking.created_at).total_seconds() < 300:
+                            return Response({'error': f'Ghế ID {s_id} đang được giữ chỗ 5 phút để thanh toán VNPay!'}, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            # Đơn hàng cũ đã quá 5 phút -> Hủy đơn cũ để giải phóng ghế
+                            pending_ticket.booking.payment_status = 'CANCELLED'
+                            pending_ticket.booking.save()
 
                     type_ticket = TypeTicket.objects.filter(pk=t_type_id).first() if t_type_id else None
                     price = float(type_ticket.price) if (type_ticket and type_ticket.price) else 75000.0

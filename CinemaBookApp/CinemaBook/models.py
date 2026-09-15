@@ -146,6 +146,15 @@ class Showtime(models.Model):
         from .validate import validate_showtime
         validate_showtime(self)
 
+    def save(self, *args, **kwargs):
+        if self.movie and self.movie.duration and self.start_time and not self.end_time:
+            import datetime
+            dummy_date = datetime.date(2000, 1, 1)
+            dt_start = datetime.datetime.combine(dummy_date, self.start_time)
+            dt_end = dt_start + datetime.timedelta(minutes=self.movie.duration)
+            self.end_time = dt_end.time()
+        super().save(*args, **kwargs)
+
     def has_sold_seats(self):
         """Kiểm tra xem suất chiếu đã có ít nhất 1 ghế được bán/đặt vé hay chưa."""
         from .validate import check_showtime_has_sold_seats

@@ -109,7 +109,6 @@ class MovieAdmin(admin.ModelAdmin):
     list_filter = ('active', 'status_movie', 'categories', 'release_year', 'created_at')
     search_fields = ('movie_name', 'description', 'actor', 'drirector')
     ordering = ('-created_at',)
-    date_hierarchy = 'created_at'
     filter_horizontal = ('categories',)
 
     def has_module_permission(self, request):
@@ -449,11 +448,24 @@ class ShowtimeAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean() or {}
+        movie = cleaned_data.get('movie')
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+
+        # Tự động tính Giờ kết thúc theo Thời lượng phim nếu bỏ trống
+        if movie and movie.duration and start_time and not end_time:
+            import datetime
+            dummy_date = datetime.date(2000, 1, 1)
+            dt_start = datetime.datetime.combine(dummy_date, start_time)
+            dt_end = dt_start + datetime.timedelta(minutes=movie.duration)
+            end_time = dt_end.time()
+            cleaned_data['end_time'] = end_time
+
         showtime = Showtime(
             show_date=cleaned_data.get('show_date'),
-            start_time=cleaned_data.get('start_time'),
-            end_time=cleaned_data.get('end_time'),
-            movie=cleaned_data.get('movie'),
+            start_time=start_time,
+            end_time=end_time,
+            movie=movie,
             room=cleaned_data.get('room'),
         )
 
@@ -472,12 +484,12 @@ class ShowtimeAdmin(admin.ModelAdmin):
     autocomplete_fields = ['movie', 'room']
     list_display = (
         'id',
-        'movie',
+        'get_movie_title',
+        'get_cinema_name',
         'room',
         'show_date',
-        'start_time',
-        'end_time',
-        'created_at',
+        'get_time_formatted',
+        'get_duration_badge',
         'view_detail'
     )
     list_filter = (
@@ -490,7 +502,32 @@ class ShowtimeAdmin(admin.ModelAdmin):
     )
     search_fields = ('movie__movie_name', 'room__name', 'room__cinema__name')
     ordering = ('-show_date', '-start_time')
-    date_hierarchy = 'show_date'
+
+    @admin.display(description='Phim chiếu')
+    def get_movie_title(self, obj):
+        if obj.movie:
+            return format_html('<span style="font-weight: 700; color: #ffffff;">{}</span>', obj.movie.movie_name)
+        return "-"
+
+    @admin.display(description='Rạp chiếu')
+    def get_cinema_name(self, obj):
+        if obj.room and obj.room.cinema:
+            return format_html('<span style="background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 0.8rem;">📍 {}</span>', obj.room.cinema.name)
+        return "-"
+
+    @admin.display(description='Khung giờ chiếu')
+    def get_time_formatted(self, obj):
+        if obj.start_time and obj.end_time:
+            start_str = obj.start_time.strftime('%H:%M')
+            end_str = obj.end_time.strftime('%H:%M')
+            return format_html('<span style="background: rgba(225, 29, 72, 0.15); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.3); padding: 3px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">⏰ {} ➔ {}</span>', start_str, end_str)
+        return "-"
+
+    @admin.display(description='Thời lượng phim')
+    def get_duration_badge(self, obj):
+        if obj.movie and obj.movie.duration:
+            return format_html('<span style="background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3); padding: 3px 10px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;">⏱️ {} phút</span>', obj.movie.duration)
+        return "-"
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -581,7 +618,6 @@ class CustomUserAdmin(BaseUserAdmin):
     list_filter = ('profile__role', 'profile__cinema', 'is_staff', 'is_superuser', 'is_active', 'date_joined')
     search_fields = ('username', 'email', 'first_name', 'last_name', 'profile__name', 'profile__number_phone')
     ordering = ('username',)
-    date_hierarchy = 'date_joined'
 
     def has_module_permission(self, request):
         if is_branch_admin(request.user):
@@ -661,12 +697,11 @@ class BookingAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_display = (
         'id', 'user', 'get_movie', 'get_showtime_date', 'get_showtime_time',
-        'get_seats', 'total_price', 'get_payment_method', 'get_payment_status', 'created_at', 'view_detail'
+        'get_seats', 'get_total_price_formatted', 'get_payment_method', 'get_payment_status', 'created_at', 'view_detail'
     )
     list_filter = ('payment_status', 'payment_method', 'showtime__room__cinema', 'showtime__movie', 'showtime__show_date', 'created_at')
     search_fields = ('id', 'user__username', 'user__email', 'user__first_name', 'showtime__movie__movie_name', 'tickets__ticket_code', 'tickets__seat__seat_number')
     ordering = ('-created_at',)
-    date_hierarchy = 'created_at'
     inlines = [TicketInline]
 
     def get_queryset(self, request):
@@ -721,29 +756,44 @@ class BookingAdmin(admin.ModelAdmin):
         seats = [t.seat.seat_number for t in obj.tickets.select_related('seat').all()]
         return ", ".join(seats) if seats else "Chưa chọn ghế"
 
+    @admin.display(description='Tổng tiền')
+    def get_total_price_formatted(self, obj):
+        price = obj.total_price or 0.0
+        formatted = f"{price:,.0f}".replace(",", ".")
+        return format_html('<span style="font-weight: 800; color: #f5e625; font-family: monospace;">{} VNĐ</span>', formatted)
+
     @admin.display(description='Phương thức thanh toán')
     def get_payment_method(self, obj):
         method = (obj.payment_method or '').upper()
         if 'VNPAY' in method or 'ONLINE' in method:
-            return "VNPAY"
-        return "Tiền mặt"
+            return format_html('<span style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 3px 10px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;">💳 ONLINE VNPAY</span>')
+        return format_html('<span style="background: rgba(107, 114, 128, 0.2); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.4); padding: 3px 10px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;">💵 Tiền mặt</span>')
 
     @admin.display(description='Trạng thái thanh toán')
     def get_payment_status(self, obj):
-        status = (obj.payment_status or '').upper()
-        if status == 'PAID':
-            return "Đã thanh toán"
-        return "Chưa thanh toán"
+        st = (obj.payment_status or '').upper()
+        if st in ('PAID', 'COMPLETED'):
+            return format_html('<span style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.4); padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">🟢 ĐÃ THANH TOÁN</span>')
+        elif st == 'PENDING':
+            return format_html('<span style="background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.4); padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">🟡 CHƯA THANH TOÁN</span>')
+        else:
+            return format_html('<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;">🔴 ĐÃ HỦY</span>')
 
 
 
 @admin.register(TypeTicket)
 class TypeTicketAdmin(admin.ModelAdmin):
     list_per_page = 20
-    list_display = ('id', 'name', 'description', 'price', 'created_at')
+    list_display = ('id', 'name', 'description', 'get_price_formatted', 'created_at')
     search_fields = ('name', 'description')
     list_filter = ('name', 'price', 'created_at')
     ordering = ('-created_at',)
+
+    @admin.display(description='Giá vé')
+    def get_price_formatted(self, obj):
+        price = obj.price or 0.0
+        formatted = f"{price:,.0f}".replace(",", ".")
+        return format_html('<span style="font-weight: 700; color: #4ade80; font-family: monospace;">{} VNĐ</span>', formatted)
 
     def has_module_permission(self, request):
         if is_branch_admin(request.user):
@@ -754,11 +804,16 @@ class TypeTicketAdmin(admin.ModelAdmin):
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_per_page = 20
-    list_display = ('id', 'ticket_code', 'booking', 'seat', 'type_ticket', 'price', 'is_used', 'used_at', 'created_at', 'view_detail')
+    list_display = ('id', 'ticket_code', 'booking', 'seat', 'type_ticket', 'get_price_formatted', 'is_used', 'used_at', 'created_at', 'view_detail')
     list_filter = ('is_used', 'type_ticket', 'booking__payment_status', 'booking__payment_method', 'booking__showtime__room__cinema', 'booking__showtime__movie', 'created_at')
     search_fields = ('ticket_code', 'booking__user__username', 'seat__seat_number', 'type_ticket__name', 'booking__showtime__movie__movie_name')
     ordering = ('-created_at',)
-    date_hierarchy = 'created_at'
+
+    @admin.display(description='Giá vé')
+    def get_price_formatted(self, obj):
+        price = obj.price or 0.0
+        formatted = f"{price:,.0f}".replace(",", ".")
+        return format_html('<span style="font-weight: 700; color: #4ade80; font-family: monospace;">{} VNĐ</span>', formatted)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

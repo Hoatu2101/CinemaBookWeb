@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import cookies from "react-cookies";
+import { MyUserContext } from "../../configs/context";
 import Apis, { endpoints } from "../../configs/Apis";
 import "../../styles/movie.css";
 
@@ -31,6 +34,10 @@ const isShowtimePast = (st) => {
 };
 
 const ShowtimeList = ({ movieId, onSelectShowtime }) => {
+    const [user] = useContext(MyUserContext);
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const todayStr = getLocalDateStr();
     const [showtimes, setShowtimes] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
@@ -126,6 +133,15 @@ const ShowtimeList = ({ movieId, onSelectShowtime }) => {
             alert("Suất chiếu này đã qua thời gian khởi chiếu!");
             return;
         }
+
+        const token = cookies.load("token");
+        const currentUser = user || cookies.load("user");
+        if (!currentUser || !token) {
+            alert("Vui lòng đăng nhập tài khoản để chọn suất chiếu và đặt vé!");
+            navigate(`/login?next=${encodeURIComponent(location.pathname)}`);
+            return;
+        }
+
         setSelectedId(st.id);
         if (onSelectShowtime) {
             onSelectShowtime(st); 

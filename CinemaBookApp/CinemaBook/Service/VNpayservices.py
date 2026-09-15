@@ -3,6 +3,7 @@ import hmac
 import os
 import urllib.parse
 from datetime import datetime, timedelta, timezone
+from django.conf import settings
 
 class VNPayService:
     def __init__(self, tmn_code=None, hash_secret=None, vnp_url=None, return_url=None):

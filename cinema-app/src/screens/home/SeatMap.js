@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Container, Button, Badge, Row, Col } from "react-bootstrap";
+import { useNavigate, useLocation } from "react-router-dom";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/context";
+import MySpinner from "../../components/MySpinner/MySpinner";
 import { 
     lockSeatInFirebase, 
     unlockSeatInFirebase, 
@@ -13,10 +15,17 @@ import cookies from "react-cookies";
 
 const SeatMap = ({ showtimeId }) => {
     const [user] = useContext(MyUserContext);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const token = cookies.load("token") || localStorage.getItem("access_token");
+    const currentUser = user || cookies.load("user");
+    const isLoggedIn = Boolean(currentUser || token);
+
     const [seats, setSeats] = useState([]);
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [fbSeats, setFbSeats] = useState({});
-    const [, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
     const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
 
     // Loại vé động kết nối với Backend Django DB (Giá chuẩn 75.000 VNĐ)
@@ -43,7 +52,6 @@ const SeatMap = ({ showtimeId }) => {
         clientSessionId = "sess_" + Math.random().toString(36).substring(2, 9) + "_" + Date.now();
         sessionStorage.setItem("client_session_id", clientSessionId);
     }
-    const currentUser = user || cookies.load("user") || { username: "khachhang" };
     const myLockUserId = currentUser?.id ? `user_${currentUser.id}` : ((currentUser?.username && currentUser.username !== "khachhang") ? `user_${currentUser.username}` : clientSessionId);
     const lockUserObject = { ...currentUser, lock_user_id: myLockUserId };
 
@@ -167,6 +175,29 @@ const SeatMap = ({ showtimeId }) => {
         }, 1000);
 
         return () => clearInterval(timer);
+    }, [selectedSeats, validId]);
+
+    // 4. Tự động giải phóng hoàn toàn ghế nếu người dùng thoát trang, chuyển trang hoặc đóng tab giữa chừng
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (selectedSeats.length > 0) {
+                const sIds = selectedSeats.map((s) => s.id || s.seatId);
+                sIds.forEach((sId) => unlockSeatInFirebase(validId, sId));
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            if (selectedSeats.length > 0) {
+                const sIds = selectedSeats.map((s) => s.id || s.seatId);
+                sIds.forEach((sId) => unlockSeatInFirebase(validId, sId));
+                try {
+                    authApis().post("/seat-statuses/unlock_seats/", { showtime_id: validId, seat_ids: sIds }).catch(() => {});
+                } catch (e) {}
+            }
+        };
     }, [selectedSeats, validId]);
 
     // Tăng số lượng vé theo loại
@@ -324,6 +355,11 @@ const SeatMap = ({ showtimeId }) => {
                 try {
                     const vnpayRes = await authApis().post(`/bookings/${orderId}/create_vnpay_url/`);
                     if (vnpayRes.data?.payment_url) {
+                        seatIds.forEach((sId) => unlockSeatInFirebase(validId, sId));
+                        try {
+                            authApis().post("/seat-statuses/unlock_seats/", { showtime_id: validId, seat_ids: seatIds }).catch(() => {});
+                        } catch (e) {}
+
                         window.location.href = vnpayRes.data.payment_url;
                         return;
                     }
@@ -365,6 +401,23 @@ const SeatMap = ({ showtimeId }) => {
             }
         }
     };
+
+    if (!isLoggedIn) {
+        return (
+            <Container className="seatmap-container my-5 p-4 rounded shadow-lg text-center bg-dark text-white border border-warning" style={{ backgroundColor: "#14141d" }}>
+                <h4 className="text-warning mb-3 fw-bold">YÊU CẦU ĐĂNG NHẬP TÀI KHOẢN</h4>
+                <p className="fs-5 text-light mb-4">Bạn cần phải đăng nhập tài khoản để chọn suất chiếu và thực hiện đặt vé.</p>
+                <Button 
+                    variant="warning" 
+                    size="lg" 
+                    className="fw-bold px-5 py-3 text-uppercase text-dark"
+                    onClick={() => navigate(`/login?next=${encodeURIComponent(location.pathname)}`)}
+                >
+                    Đăng nhập ngay
+                </Button>
+            </Container>
+        );
+    }
 
     return (
         <Container className="seatmap-container my-5 p-4 rounded shadow-lg" style={{ backgroundColor: "#14141d", border: "1px solid #dc2626" }}>
@@ -464,7 +517,12 @@ const SeatMap = ({ showtimeId }) => {
 
             {/* Sơ đồ ghế Realtime Firebase */}
             <div className="seats-grid d-flex flex-column align-items-center mb-4">
-                {Object.keys(seatRows).length > 0 ? (
+                {loading ? (
+                    <div className="text-center py-5">
+                        <MySpinner />
+                        <p className="mt-3 text-warning fw-semibold">Đang tải sơ đồ ghế xem phim...</p>
+                    </div>
+                ) : Object.keys(seatRows).length > 0 ? (
                     Object.keys(seatRows).sort().map((rowKey) => (
                         <div key={rowKey} className="seat-row d-flex align-items-center mb-3">
                             <div className="row-label me-3 text-center">

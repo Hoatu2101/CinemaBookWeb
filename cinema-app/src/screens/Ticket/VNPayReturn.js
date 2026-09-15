@@ -41,20 +41,26 @@ const VNPayReturn = () => {
         fetchBooking();
     }, [bookingId, isSuccess]);
 
-    // Tự động xử lý trạng thái ghế trên Firebase Realtime khi nhận phản hồi từ VNPay
+    // Tự động xử lý trạng thái ghế trên Firebase Realtime & Django DB khi nhận phản hồi từ VNPay
     useEffect(() => {
         if (!showtimeId || !rawSeatIds) return;
 
         const seatIdsArray = rawSeatIds.split(',').map(s => s.trim()).filter(Boolean);
 
         if (isSuccess) {
-            // Thanh toán VNPay thành công -> Khóa vĩnh viễn ghế (BOOKED) không ai ấn vào
+            // Thanh toán VNPay thành công -> Khóa vĩnh viễn ghế (BOOKED)
             bookSeatsInFirebase(showtimeId, seatIdsArray, currentUser);
         } else {
             // Hủy thanh toán VNPay hoặc thất bại -> Giải phóng toàn bộ ghế về hiện trạng ban đầu (FREE)
             seatIdsArray.forEach((seatId) => {
                 unlockSeatInFirebase(showtimeId, seatId);
             });
+            try {
+                authApis().post('/seat-statuses/unlock_seats/', {
+                    showtime_id: showtimeId,
+                    seat_ids: seatIdsArray
+                }).catch(() => {});
+            } catch (e) {}
         }
     }, [isSuccess, showtimeId, rawSeatIds, currentUser]);
 

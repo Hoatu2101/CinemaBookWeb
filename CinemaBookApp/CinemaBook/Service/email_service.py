@@ -59,7 +59,7 @@ def send_ticket_confirmation_email(booking):
 
     seats_str = ", ".join(seat_list) if seat_list else "N/A"
     ticket_codes_str = "\n".join([f"  - Ghế {code}" for code in ticket_codes]) if ticket_codes else "N/A"
-    formatted_price = f"{booking.total_price:,.0f} VNĐ" if booking.total_price else "0 VNĐ"
+    formatted_price = f"{booking.total_price:,.0f}".replace(",", ".") + " VNĐ" if booking.total_price else "0 VNĐ"
 
     subject = f"[CineBook] Xác Nhận Đặt Vé Thành Công - Mã Đơn #{booking.id}"
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'CineBook <noreply@cinebook.com>')
