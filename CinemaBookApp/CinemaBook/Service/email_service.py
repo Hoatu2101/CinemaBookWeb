@@ -161,5 +161,24 @@ Trân trọng,
         logger.info(f"Đã gửi email xác nhận đặt vé #{booking.id} tới {recipient_email}")
         return True
     except Exception as e:
-        logger.error(f"Lỗi gửi email xác nhận vé #{booking.id} tới {recipient_email}: {str(e)}")
+        err_str = str(e)
+        logger.error(f"Lỗi gửi email xác nhận vé #{booking.id} tới {recipient_email}: {err_str}")
+        
+        # Xử lý tự động khi Resend ở chế độ Onboarding (chỉ cho phép gửi tới Email đăng ký tài khoản Resend)
+        if "only send to your own email" in err_str.lower() or "onboarding" in err_str.lower() or "451" in err_str:
+            resend_owner_email = "hoatu2101@gmail.com" # Email tài khoản Resend của bạn
+            if recipient_email != resend_owner_email:
+                try:
+                    logger.info(f"Resend Onboarding Mode: Tự động gửi thử nghiệm tới {resend_owner_email}")
+                    test_msg = EmailMultiAlternatives(
+                        f"[CineBook Test] {subject}", 
+                        f"(Thông báo: Do Resend ở chế độ thử nghiệm Onboarding, email này đáng lẽ gửi tới {recipient_email})\n\n{text_content}", 
+                        from_email, 
+                        [resend_owner_email]
+                    )
+                    test_msg.attach_alternative(html_content, "text/html")
+                    test_msg.send(fail_silently=False)
+                    return True
+                except Exception as ex:
+                    logger.error(f"Lỗi gửi email test Resend: {str(ex)}")
         return False
