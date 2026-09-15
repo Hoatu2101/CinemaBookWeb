@@ -198,7 +198,19 @@ def vnpay_return_view(request):
                 )
 
             # Gửi email xác nhận đặt vé cho khách hàng
-            send_ticket_confirmation_email(booking)
+            try:
+                send_ticket_confirmation_email(booking)
+            except Exception as e:
+                logger.error(f"Lỗi gửi email xác nhận vé: {str(e)}")
+
+        if is_json_request:
+            return Response({
+                'status': 'success',
+                'booking_id': order_id,
+                'showtime_id': showtime_id,
+                'seat_ids': seat_ids,
+                'message': 'Thanh toán VNPay thành công'
+            }, status=status.HTTP_200_OK)
 
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3001')
         return HttpResponseRedirect(f"{frontend_url}/vnpay-return?status=success&booking_id={order_id}&showtime_id={showtime_id}&seat_ids={','.join(seat_ids)}")
@@ -211,6 +223,15 @@ def vnpay_return_view(request):
             SeatShowtimeStatus.objects.filter(
                 showtime=booking.showtime, seat=t.seat
             ).update(status=SeatStatus.FREE, user=None)
+
+    if is_json_request:
+        return Response({
+            'status': 'failed',
+            'booking_id': order_id,
+            'showtime_id': showtime_id,
+            'seat_ids': seat_ids,
+            'message': 'Thanh toán VNPay thất bại hoặc không hợp lệ'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3001')
     return HttpResponseRedirect(f"{frontend_url}/vnpay-return?status=failed&booking_id={order_id}&showtime_id={showtime_id}&seat_ids={','.join(seat_ids)}")
