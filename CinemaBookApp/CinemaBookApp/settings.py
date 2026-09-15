@@ -69,6 +69,9 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 ROOT_URLCONF = 'CinemaBookApp.urls'
 
@@ -89,28 +92,50 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'CinemaBookApp.wsgi.application'
 
-db_engine = os.getenv('DB_ENGINE', '').strip()
-db_host = os.getenv('DB_HOST', 'localhost').strip()
+import urllib.parse
 
-# Cấu hình Database thông minh: Trên Render Cloud luôn tự động dùng SQLite nếu không có Server MySQL riêng
-if not db_engine or 'sqlite' in db_engine.lower() or os.getenv('RENDER'):
+database_url = os.getenv('DATABASE_URL', '').strip()
+db_engine = os.getenv('DB_ENGINE', '').strip()
+db_host = os.getenv('DB_HOST', '').strip()
+
+if database_url:
+    url = urllib.parse.urlparse(database_url)
+    scheme = url.scheme.split('+')[0].lower()
+    engine_map = {
+        'postgres': 'django.db.backends.postgresql',
+        'postgresql': 'django.db.backends.postgresql',
+        'mysql': 'django.db.backends.mysql',
+    }
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+            'ENGINE': engine_map.get(scheme, 'django.db.backends.postgresql'),
+            'NAME': url.path[1:],
+            'USER': url.username or '',
+            'PASSWORD': urllib.parse.unquote(url.password or ''),
+            'HOST': url.hostname or '',
+            'PORT': str(url.port or (3306 if 'mysql' in scheme else 5432)),
         }
     }
-else:
+elif db_engine and 'sqlite' not in db_engine.lower():
     DATABASES = {
         'default': {
             'ENGINE': db_engine,
             'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
             'USER': os.getenv('DB_USER', os.getenv('GET_USER_MySQL', '')),
             'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('GET_PASS_MySQL', '')),
-            'HOST': db_host,
-            'PORT': os.getenv('DB_PORT', '3306'),
+            'HOST': db_host or 'localhost',
+            'PORT': os.getenv('DB_PORT', '3306' if 'mysql' in db_engine.lower() else '5432'),
         }
     }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        }
+    }
+
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
