@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin.views.decorators import staff_member_required
 
-from ..Service.gemini_services import generate_movie_description, ask_gemini, analyze_revenue_data
+from ..Service.gemini_services import generate_movie_description, ask_gemini, ask_gemini_cinema_system, analyze_revenue_data
 
 
 @csrf_exempt
@@ -23,7 +23,7 @@ def gemini_generate_description_api(request):
         desc = generate_movie_description(movie_name, categories, director, actor)
         return JsonResponse({'status': 'success', 'description': desc})
     except Exception as exc:
-        return JsonResponse({'status': 'error', 'message': str(exc)}, status=500)
+        return JsonResponse({'status': 'error', 'message': str(exc)}, status=200)
 
 
 @csrf_exempt
@@ -47,7 +47,7 @@ def gemini_chat_api(request):
         reply = ask_gemini_cinema_system(prompt)
         return JsonResponse({'status': 'success', 'reply': reply})
     except Exception as exc:
-        return JsonResponse({'status': 'error', 'message': str(exc)}, status=500)
+        return JsonResponse({'status': 'error', 'message': str(exc)}, status=200)
 
 
 @csrf_exempt

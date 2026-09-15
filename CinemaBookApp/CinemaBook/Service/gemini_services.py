@@ -1,4 +1,7 @@
 import os
+import json
+import urllib.request
+import urllib.error
 from django.conf import settings
 
 try:
@@ -6,56 +9,105 @@ try:
 except ImportError:
     genai = None
 
-def get_gemini_client():
-    if genai is None:
-        raise ValueError("Thư viện google-genai chưa được cài đặt!")
+try:
+    import google.generativeai as legacy_genai
+except ImportError:
+    legacy_genai = None
+
+
+def get_api_key():
     api_key = getattr(settings, 'GEMINI_API_KEY', None) or os.getenv('GEMINI_API_KEY')
     if not api_key:
         raise ValueError("Chưa tìm thấy GEMINI_API_KEY! Vui lòng cấu hình GEMINI_API_KEY trong file .env hoặc settings.py.")
-    return genai.Client(api_key=api_key)
+    return api_key
+
+
+def _ask_gemini_rest_api(api_key, prompt):
+    """Fallback gọi trực tiếp REST API của Google Gemini qua urllib (không phụ thuộc SDK)."""
+    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+    last_err = None
+    for model in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": prompt}]
+                }
+            ]
+        }
+        try:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                try:
+                    text = data['candidates'][0]['content']['parts'][0]['text']
+                    if text:
+                        return text
+                except (KeyError, IndexError):
+                    pass
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            last_err = Exception(f"Gemini REST Error {he.code}: {err_body}")
+        except Exception as e:
+            last_err = e
+    if last_err:
+        raise last_err
+    raise ValueError("Không nhận được phản hồi từ Gemini API.")
+
 
 def ask_gemini(prompt):
-    client = get_gemini_client()
-    preferred_models = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash-lite",
-    ]
+    api_key = get_api_key()
     last_error = None
 
-    for model_name in preferred_models:
+    # Tier 1: Try new google.genai SDK
+    if genai is not None:
         try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt
-            )
-            if response and response.text:
-                return response.text
-        except Exception as e:
-            last_error = e
-
-    # Dynamic fallback: query available models for this specific API key
-    try:
-        for model_info in client.models.list():
-            m_name = getattr(model_info, 'name', '') or str(model_info)
-            if 'gemini' in m_name.lower():
+            client = genai.Client(api_key=api_key)
+            preferred_models = [
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+                "gemini-1.5-pro",
+            ]
+            for model_name in preferred_models:
                 try:
                     response = client.models.generate_content(
-                        model=m_name,
+                        model=model_name,
                         contents=prompt
                     )
                     if response and response.text:
                         return response.text
-                except Exception as inner_e:
-                    last_error = inner_e
-    except Exception:
-        pass
+                except Exception as e:
+                    last_error = e
+        except Exception as e:
+            last_error = e
+
+    # Tier 2: Try legacy google.generativeai SDK
+    if legacy_genai is not None:
+        try:
+            legacy_genai.configure(api_key=api_key)
+            legacy_models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-pro"]
+            for m in legacy_models:
+                try:
+                    mod = legacy_genai.GenerativeModel(m)
+                    res = mod.generate_content(prompt)
+                    if res and res.text:
+                        return res.text
+                except Exception as e:
+                    last_error = e
+        except Exception as e:
+            last_error = e
+
+    # Tier 3: Direct HTTP REST Call (Pure Python fallback - guaranteed zero missing dependency)
+    try:
+        return _ask_gemini_rest_api(api_key, prompt)
+    except Exception as rest_err:
+        last_error = rest_err
 
     if last_error:
         raise last_error
+    raise ValueError("Không thể kết nối đến Gemini AI.")
 
 def ask_gemini_cinema_system(prompt):
     """Hỏi AI Gemini với ràng buộc BẮT BUỘC chỉ trả lời các câu hỏi liên quan đến hệ thống rạp phim CineBook."""

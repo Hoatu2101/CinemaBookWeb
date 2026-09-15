@@ -25,7 +25,7 @@ const ChatWidget = () => {
         }
     }, [messages, isOpen]);
 
-    // BẮT BUỘC: Khi chưa đăng nhập -> KHÔNG HIỆN Chat Widget
+
     if (!user) {
         return null;
     }
