@@ -93,40 +93,66 @@ TEMPLATES = [
 WSGI_APPLICATION = 'CinemaBookApp.wsgi.application'
 
 import urllib.parse
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
+is_render = os.getenv('RENDER', '').lower() in ('true', '1', 't')
 database_url = os.getenv('DATABASE_URL', '').strip()
 db_engine = os.getenv('DB_ENGINE', '').strip()
 db_host = os.getenv('DB_HOST', '').strip()
 
 if database_url:
-    url = urllib.parse.urlparse(database_url)
-    scheme = url.scheme.split('+')[0].lower()
-    engine_map = {
-        'postgres': 'django.db.backends.postgresql',
-        'postgresql': 'django.db.backends.postgresql',
-        'mysql': 'django.db.backends.mysql',
-    }
-    DATABASES = {
-        'default': {
-            'ENGINE': engine_map.get(scheme, 'django.db.backends.postgresql'),
-            'NAME': url.path[1:],
-            'USER': url.username or '',
-            'PASSWORD': urllib.parse.unquote(url.password or ''),
-            'HOST': url.hostname or '',
-            'PORT': str(url.port or (3306 if 'mysql' in scheme else 5432)),
+    if dj_database_url:
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
         }
-    }
+    else:
+        url = urllib.parse.urlparse(database_url)
+        scheme = url.scheme.split('+')[0].lower()
+        engine_map = {
+            'postgres': 'django.db.backends.postgresql',
+            'postgresql': 'django.db.backends.postgresql',
+            'mysql': 'django.db.backends.mysql',
+            'sqlite': 'django.db.backends.sqlite3',
+        }
+        DATABASES = {
+            'default': {
+                'ENGINE': engine_map.get(scheme, 'django.db.backends.postgresql'),
+                'NAME': url.path[1:] if scheme != 'sqlite' else str(BASE_DIR / 'db.sqlite3'),
+                'USER': url.username or '',
+                'PASSWORD': urllib.parse.unquote(url.password or '') if url.password else '',
+                'HOST': url.hostname or '',
+                'PORT': str(url.port or (3306 if 'mysql' in scheme else 5432)) if scheme != 'sqlite' else '',
+            }
+        }
 elif db_engine and 'sqlite' not in db_engine.lower():
-    DATABASES = {
-        'default': {
-            'ENGINE': db_engine,
-            'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
-            'USER': os.getenv('DB_USER', os.getenv('GET_USER_MySQL', '')),
-            'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('GET_PASS_MySQL', '')),
-            'HOST': db_host or 'localhost',
-            'PORT': os.getenv('DB_PORT', '3306' if 'mysql' in db_engine.lower() else '5432'),
+    target_host = db_host or ('localhost' if not is_render else '')
+    if is_render and target_host in ('', 'localhost', '127.0.0.1'):
+        # On Render containers, MySQL on localhost does not exist.
+        # Fallback to SQLite during build or if remote host is unspecified to prevent connection refused crashes.
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
         }
-    }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': db_engine,
+                'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+                'USER': os.getenv('DB_USER', os.getenv('GET_USER_MySQL', '')),
+                'PASSWORD': os.getenv('DB_PASSWORD', os.getenv('GET_PASS_MySQL', '')),
+                'HOST': target_host or 'localhost',
+                'PORT': os.getenv('DB_PORT', '3306' if 'mysql' in db_engine.lower() else '5432'),
+            }
+        }
 else:
     DATABASES = {
         'default': {
